@@ -1,20 +1,70 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodeTutor</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeTutor 🚀</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <div class="container">
-    <h1>CodeTutor 🚀</h1>
-    <p>Aprendé programación jugando.</p>
 
-    <button onclick="cargarModulos()">Cargar módulos</button>
+  <div class="header">
+    <div>
+      <h1>CodeTutor 🚀</h1>
+      <p class="subtitulo">Aprendé Python desde cero hasta casos reales</p>
+    </div>
+    <div class="stats">
+      <div class="card stat-card">
+        <div class="stat-label">⚡ XP</div>
+        <div class="stat-valor" id="xp">0</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">🏆 Nivel</div>
+        <div class="stat-valor" id="nivel">1</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">✅ Módulos</div>
+        <div class="stat-valor"><span id="completados">0</span><span style="color:#404060">/25</span></div>
+      </div>
+    </div>
+  </div>
 
-    <div id="modulos"></div>
+  <div class="progreso-barra-wrap">
+    <div class="progreso-barra-bg">
+      <div class="progreso-barra-fill" id="barra-progreso" style="width:0%"></div>
+    </div>
+    <span class="progreso-texto" id="progreso-texto">0 de 25 módulos</span>
+  </div>
+
+  <div id="bloques-contenedor"></div>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modal-overlay" onclick="cerrarModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <button class="modal-cerrar" onclick="cerrarModal()">✕</button>
+      <div id="modal-contenido"></div>
+    </div>
+  </div>
+
+  <!-- TUTOR IA -->
+  <div class="ia card">
+    <div class="ia-header">
+      <h2>⚡ Tutor IA <span style="font-size:13px;color:#7070a0;font-weight:400">(Gemini — gratis)</span></h2>
+      <div class="ia-estado" id="ia-estado">Verificando...</div>
+    </div>
+    <p class="ia-desc">Preguntame lo que quieras sobre el módulo que estés haciendo. No te doy la respuesta directa, pero sí te guío hasta que llegues solo.</p>
+
+    <div class="chat-historial" id="chat-historial"></div>
+
+    <div class="ia-input-wrap">
+      <input type="text" id="pregunta" placeholder="Escribí tu pregunta..." onkeydown="if(event.key==='Enter') preguntarIA()" />
+      <button id="btn-preguntar" onclick="preguntarIA()">Enviar</button>
+    </div>
+    <button class="btn-secundario" onclick="limpiarConversacion()">🗑 Nueva conversación</button>
+  </div>
+
 </div>
 
 <script src="app.js"></script>
