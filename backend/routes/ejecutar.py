@@ -1,154 +1,201 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
 import subprocess
 import tempfile
 import os
-import sys
 import time
+import shutil
+import glob
+from fastapi import APIRouter
+from pydantic import BaseModel
 
-router = APIRouter(prefix="/ejecutar", tags=["Ejecutar"])
 
-class Codigo(BaseModel):
+def _find_executable(name: str) -> str | None:
+    """shutil.which pero también busca en rutas conocidas de WinGet/MinGW."""
+    found = shutil.which(name)
+    if found:
+        return found
+    # Rutas adicionales donde WinGet instala MinGW en Windows
+    extra_patterns = [
+        os.path.expanduser(
+            f"~/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.*/"
+            f"mingw64/bin/{name}.exe"
+        ),
+        r"C:\mingw64\bin\\" + name + ".exe",
+        r"C:\msys64\mingw64\bin\\" + name + ".exe",
+        r"C:\Program Files\mingw-w64\**\bin\\" + name + ".exe",
+    ]
+    for pattern in extra_patterns:
+        matches = glob.glob(pattern, recursive=True)
+        if matches:
+            return matches[0]
+    return None
+
+router = APIRouter()
+
+TIMEOUT_PYTHON = 10
+TIMEOUT_JS = 10
+TIMEOUT_CPP_COMPILE = 15
+TIMEOUT_CPP_RUN = 10
+MAX_OUTPUT = 8000
+
+
+class EjecutarRequest(BaseModel):
+    lenguaje: str
     codigo: str
-    lenguaje: str  # python | javascript | cpp
 
-@router.post("/")
-def ejecutar(data: Codigo):
-    inicio = time.time()
 
-    if data.lenguaje == "python":
-        return ejecutar_python(data.codigo, inicio)
-    elif data.lenguaje == "javascript":
-        return ejecutar_javascript(data.codigo, inicio)
-    elif data.lenguaje == "cpp":
-        return ejecutar_cpp(data.codigo, inicio)
+def _truncar(texto: str) -> str:
+    if len(texto) > MAX_OUTPUT:
+        return texto[:MAX_OUTPUT] + "\n\n[... salida truncada ...]"
+    return texto
+
+
+@router.post("/ejecutar")
+def ejecutar_codigo(req: EjecutarRequest):
+    lenguaje = req.lenguaje.lower()
+
+    if lenguaje == "python":
+        return _ejecutar_python(req.codigo)
+    elif lenguaje == "javascript":
+        return _ejecutar_javascript(req.codigo)
+    elif lenguaje == "cpp":
+        return _ejecutar_cpp(req.codigo)
     else:
-        return {"output": "", "error": f"Lenguaje no soportado: {data.lenguaje}", "tiempo": 0}
+        return {"exito": False, "output": f"Lenguaje '{lenguaje}' no soportado.", "tiempo": 0}
 
 
-def ejecutar_python(codigo: str, inicio: float):
+def _ejecutar_python(codigo: str) -> dict:
+    with tempfile.NamedTemporaryFile(suffix=".py", mode="w", encoding="utf-8", delete=False) as f:
+        f.write(codigo)
+        ruta = f.name
+
+    inicio = time.time()
     try:
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py",
-                                         delete=False, encoding="utf-8") as f:
-            f.write(codigo)
-            ruta = f.name
-
-        resultado = subprocess.run(
-            [sys.executable, ruta],
-            capture_output=True, text=True,
-            timeout=10, encoding="utf-8"
+        result = subprocess.run(
+            ["python", ruta],
+            capture_output=True,
+            text=True,
+            timeout=TIMEOUT_PYTHON,
+            encoding="utf-8",
+            errors="replace",
         )
-        os.unlink(ruta)
-        tiempo = round(time.time() - inicio, 3)
-
-        return {
-            "output": resultado.stdout,
-            "error":  resultado.stderr,
-            "tiempo": tiempo,
-            "ok":     resultado.returncode == 0
-        }
-
+        elapsed = round(time.time() - inicio, 3)
+        if result.returncode == 0:
+            return {"exito": True, "output": _truncar(result.stdout or "(sin salida)"), "tiempo": elapsed}
+        else:
+            error = result.stderr or result.stdout or "Error desconocido"
+            return {"exito": False, "output": _truncar(error), "tiempo": elapsed}
     except subprocess.TimeoutExpired:
-        return {"output": "", "error": "Tiempo límite excedido (10s). ¿Tenés un loop infinito?", "tiempo": 10, "ok": False}
-    except Exception as e:
-        return {"output": "", "error": str(e), "tiempo": 0, "ok": False}
+        return {"exito": False, "output": f"⏱ Tiempo de ejecución superado ({TIMEOUT_PYTHON}s). Revisá si tenés bucles infinitos.", "tiempo": TIMEOUT_PYTHON}
+    except FileNotFoundError:
+        return {"exito": False, "output": "❌ Python no encontrado. Asegurate de tener Python instalado y en el PATH.", "tiempo": 0}
+    finally:
+        try:
+            os.unlink(ruta)
+        except Exception:
+            pass
 
 
-def ejecutar_javascript(codigo: str, inicio: float):
-    # Verificar si Node.js está instalado
-    try:
-        subprocess.run(["node", "--version"], capture_output=True, timeout=5)
-    except (FileNotFoundError, subprocess.TimeoutExpired):
+def _ejecutar_javascript(codigo: str) -> dict:
+    node_path = _find_executable("node")
+    if not node_path:
         return {
-            "output": "",
-            "error": "Node.js no está instalado. Para correr JavaScript necesitás instalar Node.js desde nodejs.org",
+            "exito": False,
+            "output": "❌ Node.js no está instalado.\n\nPara instalarlo:\n• Descargá el instalador de https://nodejs.org\n• Elegí la versión LTS\n• Reiniciá la terminal después de instalar",
             "tiempo": 0,
-            "ok": False
         }
 
-    try:
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".js",
-                                          delete=False, encoding="utf-8") as f:
-            f.write(codigo)
-            ruta = f.name
+    with tempfile.NamedTemporaryFile(suffix=".js", mode="w", encoding="utf-8", delete=False) as f:
+        f.write(codigo)
+        ruta = f.name
 
-        resultado = subprocess.run(
-            ["node", ruta],
-            capture_output=True, text=True,
-            timeout=10, encoding="utf-8"
+    inicio = time.time()
+    try:
+        result = subprocess.run(
+            [node_path, ruta],
+            capture_output=True,
+            text=True,
+            timeout=TIMEOUT_JS,
+            encoding="utf-8",
+            errors="replace",
         )
-        os.unlink(ruta)
-        tiempo = round(time.time() - inicio, 3)
-
-        return {
-            "output": resultado.stdout,
-            "error":  resultado.stderr,
-            "tiempo": tiempo,
-            "ok":     resultado.returncode == 0
-        }
-
+        elapsed = round(time.time() - inicio, 3)
+        if result.returncode == 0:
+            return {"exito": True, "output": _truncar(result.stdout or "(sin salida)"), "tiempo": elapsed}
+        else:
+            error = result.stderr or result.stdout or "Error desconocido"
+            return {"exito": False, "output": _truncar(error), "tiempo": elapsed}
     except subprocess.TimeoutExpired:
-        return {"output": "", "error": "Tiempo límite excedido (10s).", "tiempo": 10, "ok": False}
-    except Exception as e:
-        return {"output": "", "error": str(e), "tiempo": 0, "ok": False}
+        return {"exito": False, "output": f"⏱ Tiempo superado ({TIMEOUT_JS}s). Revisá si tenés bucles infinitos.", "tiempo": TIMEOUT_JS}
+    finally:
+        try:
+            os.unlink(ruta)
+        except Exception:
+            pass
 
 
-def ejecutar_cpp(codigo: str, inicio: float):
-    # Verificar si g++ está instalado
-    try:
-        subprocess.run(["g++", "--version"], capture_output=True, timeout=5)
-    except (FileNotFoundError, subprocess.TimeoutExpired):
+def _ejecutar_cpp(codigo: str) -> dict:
+    gpp_path = _find_executable("g++")
+    if not gpp_path:
         return {
-            "output": "",
-            "error": "g++ no está instalado. Para correr C++ en Windows instalá MinGW desde mingw-w64.org",
+            "exito": False,
+            "output": (
+                "❌ g++ no está instalado.\n\n"
+                "Para instalar en Windows:\n"
+                "• Instalá MinGW-w64 desde https://winlibs.com\n"
+                "• O usá MSYS2: pacman -S mingw-w64-x86_64-gcc\n"
+                "• Agregá C:\\mingw64\\bin al PATH del sistema\n"
+                "• Reiniciá la terminal"
+            ),
             "tiempo": 0,
-            "ok": False
         }
 
+    tmpdir = tempfile.mkdtemp()
+    src = os.path.join(tmpdir, "programa.cpp")
+    exe = os.path.join(tmpdir, "programa.exe")
+
+    with open(src, "w", encoding="utf-8") as f:
+        f.write(codigo)
+
+    inicio = time.time()
     try:
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".cpp",
-                                          delete=False, encoding="utf-8") as f:
-            f.write(codigo)
-            ruta_cpp = f.name
-
-        ruta_exe = ruta_cpp.replace(".cpp", ".exe" if os.name == "nt" else "")
-
         # Compilar
-        compilar = subprocess.run(
-            ["g++", ruta_cpp, "-o", ruta_exe],
-            capture_output=True, text=True,
-            timeout=15, encoding="utf-8"
+        compile_result = subprocess.run(
+            [gpp_path, "-o", exe, src, "-std=c++17", "-Wall"],
+            capture_output=True,
+            text=True,
+            timeout=TIMEOUT_CPP_COMPILE,
+            encoding="utf-8",
+            errors="replace",
         )
-
-        if compilar.returncode != 0:
-            os.unlink(ruta_cpp)
+        if compile_result.returncode != 0:
+            elapsed = round(time.time() - inicio, 3)
             return {
-                "output": "",
-                "error": "Error de compilación:\n" + compilar.stderr,
-                "tiempo": round(time.time() - inicio, 3),
-                "ok": False
+                "exito": False,
+                "output": "❌ Error de compilación:\n\n" + _truncar(compile_result.stderr),
+                "tiempo": elapsed,
             }
 
         # Ejecutar
-        resultado = subprocess.run(
-            [ruta_exe],
-            capture_output=True, text=True,
-            timeout=10, encoding="utf-8"
+        run_result = subprocess.run(
+            [exe],
+            capture_output=True,
+            text=True,
+            timeout=TIMEOUT_CPP_RUN,
+            encoding="utf-8",
+            errors="replace",
         )
-
-        os.unlink(ruta_cpp)
-        if os.path.exists(ruta_exe):
-            os.unlink(ruta_exe)
-
-        tiempo = round(time.time() - inicio, 3)
-        return {
-            "output": resultado.stdout,
-            "error":  resultado.stderr,
-            "tiempo": tiempo,
-            "ok":     resultado.returncode == 0
-        }
+        elapsed = round(time.time() - inicio, 3)
+        if run_result.returncode == 0:
+            return {"exito": True, "output": _truncar(run_result.stdout or "(sin salida)"), "tiempo": elapsed}
+        else:
+            error = run_result.stderr or run_result.stdout or "Error en ejecución"
+            return {"exito": False, "output": _truncar(error), "tiempo": elapsed}
 
     except subprocess.TimeoutExpired:
-        return {"output": "", "error": "Tiempo límite excedido (10s).", "tiempo": 10, "ok": False}
-    except Exception as e:
-        return {"output": "", "error": str(e), "tiempo": 0, "ok": False}
+        return {"exito": False, "output": f"⏱ Tiempo superado durante compilación/ejecución.", "tiempo": TIMEOUT_CPP_COMPILE}
+    finally:
+        try:
+            import shutil as sh
+            sh.rmtree(tmpdir, ignore_errors=True)
+        except Exception:
+            pass

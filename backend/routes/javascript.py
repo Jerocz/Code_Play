@@ -1,107 +1,91 @@
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/javascript", tags=["JavaScript"])
+router = APIRouter()
 
-modulos = [
+MODULOS_JS = [
     {
         "id": 1, "bloque": "Fundamentos", "titulo": "Hola Mundo",
-        "descripcion": "Tu primer programa — console.log()",
-        "xp": 20,
-        "teoria": "console.log() muestra texto en la consola del navegador. Abrís las DevTools con F12 → Console para verlo. Es el print() de JavaScript.",
-        "ejemplo": 'console.log("Hola mundo");\nconsole.log("Esto es JavaScript");\nconsole.log(42);\nconsole.log(3.14);',
-        "ejercicio": "Abrí la consola del navegador (F12 → Console) y escribí 3 console.log(): tu nombre, tu edad y tu ciudad favorita.",
-        "pista": "Cada console.log() va en su propia línea. El texto va entre comillas, los números no."
+        "descripcion": "Tu primer programa en JavaScript", "xp": 50,
+        "teoria": "JavaScript es el lenguaje de la web. Corre en el navegador y también en el servidor (Node.js).\n\nconsole.log() es la función equivalente a print() en Python: muestra información en la consola.\n\nAlgunas diferencias clave con Python:\n• Las sentencias terminan con ; (opcional pero recomendado)\n• Los bloques se delimitan con {} en lugar de indentación\n• Los strings pueden ir con comillas simples, dobles o backticks (template literals)",
+        "ejemplo": 'console.log("¡Hola, Mundo!");\nconsole.log("Mi primer programa en JS");\nconsole.log(2026);\nconsole.log(3.14);\nconsole.log("Suma:", 10 + 5);\n\n// También podés usar múltiples argumentos\nconsole.log("Resultado:", 100 / 4, "unidades");',
+        "ejercicio": "Escribí un programa que muestre:\n1. Tu nombre\n2. El lenguaje que estás aprendiendo\n3. El resultado de 3 operaciones matemáticas distintas",
+        "pista": "console.log(\"texto\") para texto. console.log(2 + 3) para operaciones. Podés combinar: console.log(\"Suma:\", 2 + 3)"
     },
     {
-        "id": 2, "bloque": "Fundamentos", "titulo": "Variables",
-        "descripcion": "let, const y var — guardar datos",
-        "xp": 30,
-        "teoria": "JavaScript tiene 3 formas de declarar variables. const es para valores que no cambian. let es para valores que pueden cambiar. var es la forma vieja (evitarla). Siempre preferí const, usá let cuando necesitás reasignar.",
-        "ejemplo": 'const nombre = "Ana";     // no cambia\nlet edad = 25;            // puede cambiar\nlet contador = 0;\ncontador = contador + 1;  // reasignar\n\nconsole.log(nombre);\nconsole.log(`Tengo ${edad} años`); // template literal',
-        "ejercicio": "Creá variables con const para tu nombre y ciudad (no van a cambiar). Usá let para tu edad. Mostrá todo con console.log usando template literals.",
-        "pista": "Los template literals van entre backticks ` ` y las variables van dentro de ${}."
+        "id": 2, "bloque": "Fundamentos", "titulo": "Variables: let y const",
+        "descripcion": "Declaración moderna de variables en JS", "xp": 50,
+        "teoria": "JavaScript tiene tres formas de declarar variables:\n• var — antigua, evitala (alcance de función, hoisting confuso)\n• let — variable que puede cambiar su valor\n• const — variable que no puede reasignarse (pero si es objeto/array, sí puede modificarse internamente)\n\nRegla simple: usá const por defecto. Si necesitás reasignar, usá let. Nunca usés var en código moderno.\n\nJavaScript tiene tipado dinámico como Python, pero a diferencia de Python, typeof permite verificar el tipo en runtime.",
+        "ejemplo": '// const: no se puede reasignar\nconst PI = 3.14159;\nconst nombre = "Ana";\n\n// let: se puede reasignar\nlet edad = 25;\nedad = 26; // OK\n\n// typeof para verificar tipo\nconsole.log(typeof nombre); // "string"\nconsole.log(typeof edad);   // "number"\nconsole.log(typeof true);   // "boolean"\nconsole.log(typeof null);   // "object" (quirk histórico)\nconsole.log(typeof undefined); // "undefined"\n\n// Destructuring\nconst [x, y, z] = [1, 2, 3];\nconst { titulo, autor } = { titulo: "Python", autor: "Guido" };\nconsole.log(x, y, z);\nconsole.log(titulo, autor);',
+        "ejercicio": "Declará con const y let:\n• Tu nombre, ciudad y año de nacimiento\n• Una variable edad calculada (2026 - año)\n• Mostralas con console.log()\n• Intentá reasignar un const (verás el error) y comentá esa línea",
+        "pista": "const nombre = \"...\"; let edad = 2026 - añoNacimiento; — Para el error: const x = 1; x = 2; // TypeError"
     },
     {
         "id": 3, "bloque": "Fundamentos", "titulo": "Tipos de datos",
-        "descripcion": "number, string, boolean, null, undefined",
-        "xp": 30,
-        "teoria": "JavaScript tiene tipos dinámicos: number (todos los números, enteros y decimales), string (texto), boolean (true/false), null (vacío intencional), undefined (sin valor asignado). typeof te dice el tipo.",
-        "ejemplo": 'const edad = 25;           // number\nconst precio = 19.99;      // number\nconst nombre = "Ana";      // string\nconst activo = true;       // boolean\nconst vacio = null;        // null\nlet sinValor;              // undefined\n\nconsole.log(typeof edad);    // "number"\nconsole.log(typeof nombre);  // "string"',
-        "ejercicio": "Creá una variable de cada tipo. Mostrá el valor y el tipo con typeof para cada una.",
-        "pista": "typeof devuelve un string con el nombre del tipo. Usá console.log(typeof variable)."
+        "descripcion": "Los tipos básicos de JavaScript", "xp": 50,
+        "teoria": "JavaScript tiene 8 tipos de datos:\n• string — texto: \"hola\", 'mundo', `template`\n• number — todos los números (enteros y decimales)\n• bigint — enteros enormes: 9007199254740991n\n• boolean — true o false\n• null — ausencia intencional de valor\n• undefined — variable declarada pero sin valor\n• symbol — identificador único\n• object — incluye arrays, funciones, objetos\n\nConversión de tipos:\n• Number(\"42\") → 42\n• String(42) → \"42\"\n• Boolean(0) → false\n• parseInt(\"42.7\") → 42\n• parseFloat(\"42.7\") → 42.7\n\nOjo: JS tiene coerción implícita que puede ser confusa: \"5\" + 3 = \"53\" (concatena), \"5\" - 3 = 2 (suma).",
+        "ejemplo": '// Tipos básicos\nconst texto = "JavaScript";\nconst numero = 42;\nconst decimal = 3.14;\nconst booleano = true;\nconst nulo = null;\nlet indefinido;\n\nconsole.log(typeof texto);    // string\nconsole.log(typeof numero);   // number\nconsole.log(typeof booleano); // boolean\nconsole.log(typeof nulo);     // object (!)\nconsole.log(typeof indefinido); // undefined\n\n// Conversiones\nconsole.log(Number("42"));    // 42\nconsole.log(Number("abc"));   // NaN\nconsole.log(String(100));     // "100"\nconsole.log(Boolean(0));      // false\nconsole.log(Boolean(""));     // false\nconsole.log(Boolean("hola")); // true\n\n// Coerción implícita (cuidado!)\nconsole.log("5" + 3);  // "53" (string)\nconsole.log("5" - 3);  // 2 (number)\nconsole.log(5 == "5"); // true (coerción)\nconsole.log(5 === "5"); // false (sin coerción)',
+        "ejercicio": "1. Creá una variable de cada tipo básico y mostrá typeof\n2. Convertí el string \"3.14\" a número con parseFloat y hacé una operación\n3. Mostrá la diferencia entre == y === con un ejemplo\n4. Mostrá qué valores son 'falsy' en JS (0, \"\", null, undefined, NaN, false)",
+        "pista": "const falsy = [0, \"\", null, undefined, NaN, false]; falsy.forEach(v => console.log(v, Boolean(v)));"
     },
     {
         "id": 4, "bloque": "Fundamentos", "titulo": "Operadores",
-        "descripcion": "Matemáticos, comparación y lógicos",
-        "xp": 30,
-        "teoria": "Operadores matemáticos: + - * / % **. Comparación: == (igual valor), === (igual valor Y tipo — siempre usá este), !=, !==, <, >. Lógicos: && (and), || (or), ! (not).",
-        "ejemplo": 'console.log(10 + 3);    // 13\nconsole.log(10 % 3);    // 1\nconsole.log(2 ** 8);    // 256\n\nconsole.log(5 === 5);   // true\nconsole.log(5 === "5"); // false (distinto tipo)\nconsole.log(5 == "5");  // true (evitar)\n\nconst mayor = 20 > 18 && true;\nconsole.log(mayor);     // true',
-        "ejercicio": "Calculá el precio final de un producto con 21% de IVA. Verificá si el total supera $1000 con ===. Mostrá si es una compra grande (true/false).",
-        "pista": "const total = precio * 1.21. Después: const esGrande = total > 1000."
+        "descripcion": "Operadores aritméticos, de comparación y lógicos", "xp": 50,
+        "teoria": "JavaScript comparte muchos operadores con otros lenguajes:\n\nAritméticos: + - * / % ** ++  --\n• ** es potencia (igual que Python)\n• ++ y -- son incremento/decremento (no existen en Python)\n\nComparación: == != === !== < > <= >=\n• == compara con coerción de tipos\n• === compara sin coerción (siempre usá ===)\n\nLógicos: && || ! ?? ??\n• && (and), || (or), ! (not)\n• ?? (nullish coalescing): devuelve el lado derecho si el izquierdo es null/undefined\n• ?. (optional chaining): accede a propiedad sin error si es null\n\nAsignación: = += -= *= /= %= **= &&= ||= ??=",
+        "ejemplo": '// Aritméticos\nconsole.log(10 + 3);  // 13\nconsole.log(10 - 3);  // 7\nconsole.log(10 * 3);  // 30\nconsole.log(10 / 3);  // 3.333...\nconsole.log(10 % 3);  // 1\nconsole.log(2 ** 10); // 1024\n\nlet x = 5;\nx++;  // x = 6\nx--;  // x = 5\nx += 10; // x = 15\n\n// Comparación estricta (siempre usá ===)\nconsole.log(5 === 5);    // true\nconsole.log(5 === "5");  // false\nconsole.log(5 !== "5");  // true\n\n// Lógicos\nconsole.log(true && false); // false\nconsole.log(true || false); // true\nconsole.log(!true);         // false\n\n// Nullish coalescing\nconst valor = null ?? "default";\nconsole.log(valor); // "default"\n\n// Optional chaining\nconst user = { perfil: { nombre: "Ana" } };\nconsole.log(user?.perfil?.nombre); // "Ana"\nconsole.log(user?.email?.address); // undefined (sin error)',
+        "ejercicio": "Creá variables a=15 y b=4. Calculá y mostrá todos los operadores aritméticos.\nDemostrá la diferencia entre == y === con 3 ejemplos.\nUsá ?? para dar un valor por defecto a una variable null.\nUsá optional chaining para acceder a propiedades anidadas de un objeto.",
+        "pista": "const nombre = usuario?.datos?.nombre ?? \"Anónimo\"; — esto es equivalente a: nombre = (usuario && usuario.datos && usuario.datos.nombre) || \"Anónimo\""
     },
     {
-        "id": 5, "bloque": "Decisiones", "titulo": "if / else",
-        "descripcion": "Tomá decisiones con condiciones",
-        "xp": 50,
-        "teoria": "if ejecuta código si la condición es true. else if prueba otra condición. else es el caso por defecto. El operador ternario condition ? valorSiTrue : valorSiFalse es la forma corta.",
-        "ejemplo": 'const nota = 75;\n\nif (nota >= 90) {\n    console.log("Sobresaliente");\n} else if (nota >= 60) {\n    console.log("Aprobado");\n} else {\n    console.log("Desaprobado");\n}\n\n// Ternario\nconst estado = nota >= 60 ? "Aprobado" : "Desaprobado";\nconsole.log(estado);',
-        "ejercicio": "Escribí una función clasificarEdad(edad) que retorne: 'niño' (<13), 'adolescente' (13-17), 'adulto' (18-64), 'adulto mayor' (65+).",
-        "pista": "Usá if/else if/else con las condiciones de rango. Recordá que el orden importa."
+        "id": 5, "bloque": "Fundamentos", "titulo": "if / else y switch",
+        "descripcion": "Condicionales en JavaScript", "xp": 50,
+        "teoria": "JavaScript tiene if/else similar a otros lenguajes, más switch/case para múltiples opciones.\n\nif/else:\nif (condicion) {\n    // código\n} else if (otra) {\n    // código\n} else {\n    // código\n}\n\nOperador ternario: condicion ? valorSiTrue : valorSiFalse\n\nswitch/case: útil cuando comparás una variable con muchos valores fijos.\nImportante: siempre incluí break en cada case, o el código 'cae' al siguiente case (fall-through).\n\nValores falsy en JS: false, 0, \"\", null, undefined, NaN — todo lo demás es truthy.",
+        "ejemplo": '// if/else\nconst hora = 14;\nlet saludo;\nif (hora < 12) {\n    saludo = "Buenos días";\n} else if (hora < 18) {\n    saludo = "Buenas tardes";\n} else {\n    saludo = "Buenas noches";\n}\nconsole.log(saludo);\n\n// Ternario\nconst edad = 20;\nconst acceso = edad >= 18 ? "permitido" : "denegado";\nconsole.log(`Acceso: ${acceso}`);\n\n// switch\nconst dia = "lunes";\nswitch (dia) {\n    case "lunes":\n    case "martes":\n    case "miércoles":\n    case "jueves":\n    case "viernes":\n        console.log("Día laborable");\n        break;\n    case "sábado":\n    case "domingo":\n        console.log("Fin de semana");\n        break;\n    default:\n        console.log("Día inválido");\n}',
+        "ejercicio": "1. Pedí un número (usá una variable fija) y determiná si es positivo, negativo o cero\n2. Usá ternario para clasificar una nota: aprobado (>=60) o reprobado\n3. Implementá un switch para los meses del año que muestre cuántos días tiene cada mes",
+        "pista": "Para el switch de meses: case 1: case 3: ... console.log(\"31 días\"); break; — febrero tiene 28 o 29 días."
     },
     {
-        "id": 6, "bloque": "Loops", "titulo": "Loops for y while",
-        "descripcion": "Repetir acciones con for, while y forEach",
-        "xp": 60,
-        "teoria": "for clásico: for(let i=0; i<n; i++). for...of recorre arrays. forEach es un método de arrays. while repite mientras sea true. En JS moderno se prefiere forEach y for...of sobre el for clásico.",
-        "ejemplo": 'const frutas = ["manzana", "banana", "naranja"];\n\n// for clásico\nfor (let i = 0; i < frutas.length; i++) {\n    console.log(frutas[i]);\n}\n\n// for...of (más limpio)\nfor (const fruta of frutas) {\n    console.log(fruta);\n}\n\n// forEach\nfrutas.forEach((fruta, i) => {\n    console.log(`${i+1}. ${fruta}`);\n});',
-        "ejercicio": "Creá un array con los números del 1 al 10. Usando forEach mostrá cada número y si es par o impar.",
-        "pista": "Usá Array.from({length:10}, (_,i) => i+1) para crear el array. En forEach: n % 2 === 0 ? 'par' : 'impar'."
+        "id": 6, "bloque": "Estructuras", "titulo": "Bucles",
+        "descripcion": "for, while, forEach y otros bucles", "xp": 75,
+        "teoria": "JavaScript tiene varios tipos de bucles:\n\nfor clásico: for (let i = 0; i < n; i++)\nfor...of: itera sobre valores de un iterable (arrays, strings)\nfor...in: itera sobre claves de un objeto\nwhile: mientras condición sea true\ndo...while: ejecuta al menos una vez\n.forEach(): método de arrays, acepta callback\n\nControl de flujo:\n• break — sale del bucle\n• continue — salta a siguiente iteración\n\nDiferencia clave entre for...of y for...in:\n• for...of array → valores: 1, 2, 3\n• for...in array → índices: '0', '1', '2'\n• for...in objeto → claves: 'nombre', 'edad'",
+        "ejemplo": '// for clásico\nfor (let i = 0; i < 5; i++) {\n    process.stdout.write(i + " ");\n}\nconsole.log();\n\n// for...of\nconst frutas = ["manzana", "banana", "cereza"];\nfor (const fruta of frutas) {\n    console.log(fruta);\n}\n\n// for...in con objeto\nconst persona = { nombre: "Ana", edad: 25, ciudad: "BA" };\nfor (const clave in persona) {\n    console.log(`${clave}: ${persona[clave]}`);\n}\n\n// forEach con índice\nfrutas.forEach((fruta, i) => {\n    console.log(`${i + 1}. ${fruta}`);\n});\n\n// while\nlet contador = 0;\nwhile (contador < 5) {\n    contador++;\n}\nconsole.log("Contador final:", contador);\n\n// Acumular suma\nconst numeros = [1, 2, 3, 4, 5];\nlet suma = 0;\nfor (const n of numeros) {\n    suma += n;\n}\nconsole.log("Suma:", suma); // 15',
+        "ejercicio": "1. Usá for clásico para imprimir la tabla de multiplicar del 7\n2. Usá for...of con una lista de países para mostrarlos numerados\n3. Usá for...in para mostrar las propiedades de un objeto persona\n4. Calculá el factorial de 10 usando while",
+        "pista": "factorial: let resultado = 1; let i = 10; while (i > 0) { resultado *= i; i--; } — para numerados: .forEach((pais, i) => console.log(`${i+1}. ${pais}`))"
     },
     {
-        "id": 7, "bloque": "Funciones", "titulo": "Funciones y Arrow functions",
-        "descripcion": "function, arrow functions y callbacks",
-        "xp": 70,
-        "teoria": "Hay dos formas principales: function nombre() {} y arrow functions: const nombre = () => {}. Las arrow functions son más cortas y son las preferidas en JS moderno. Si solo retornan una expresión, podés omitir las llaves y el return.",
-        "ejemplo": '// Función clásica\nfunction saludar(nombre) {\n    return `Hola, ${nombre}!`;\n}\n\n// Arrow function\nconst saludar2 = (nombre) => `Hola, ${nombre}!`;\n\n// Con lógica\nconst calcularIVA = (precio, tasa = 0.21) => {\n    const iva = precio * tasa;\n    return { precio, iva, total: precio + iva };\n};\n\nconsole.log(calcularIVA(1000));',
-        "ejercicio": "Creá estas arrow functions: esPrimo(n), celsiusAFahrenheit(c) y validarEmail(email). Probá cada una con distintos valores.",
-        "pista": "Para esPrimo: iterá del 2 a Math.sqrt(n). Para email: email.includes('@') && email.includes('.')."
+        "id": 7, "bloque": "Estructuras", "titulo": "Arrow functions",
+        "descripcion": "Funciones modernas y concisas en JS", "xp": 75,
+        "teoria": "Las arrow functions son una sintaxis moderna y concisa para definir funciones en JavaScript.\n\nSintaxis:\nconst nombre = (params) => { cuerpo };\n// Si es una sola expresión, podés omitir {} y return:\nconst doble = x => x * 2;\n\nDiferencias con function tradicional:\n• No tienen su propio this (heredan del contexto)\n• No tienen arguments object\n• No se pueden usar como constructores\n\nEsto las hace ideales para callbacks y métodos de arrays.\n\nClosure: una función que 'recuerda' las variables del scope donde fue creada, incluso después de que ese scope cerró.",
+        "ejemplo": '// Función tradicional\nfunction sumar(a, b) {\n    return a + b;\n}\n\n// Arrow function equivalente\nconst sumarArrow = (a, b) => a + b;\n\nconsole.log(sumar(3, 4));      // 7\nconsole.log(sumarArrow(3, 4)); // 7\n\n// Un solo parámetro: sin paréntesis\nconst cuadrado = x => x ** 2;\nconsole.log(cuadrado(5)); // 25\n\n// Sin parámetros: paréntesis vacíos\nconst saludar = () => "¡Hola!";\n\n// Con cuerpo de bloque\nconst clasificar = (nota) => {\n    if (nota >= 90) return "A";\n    if (nota >= 80) return "B";\n    if (nota >= 70) return "C";\n    return "F";\n};\n\nconsole.log(clasificar(85)); // B\n\n// Closure\nfunction crearContador(inicio = 0) {\n    let cuenta = inicio;\n    return {\n        incrementar: () => ++cuenta,\n        decrementar: () => --cuenta,\n        valor: () => cuenta,\n    };\n}\n\nconst contador = crearContador(10);\nconsole.log(contador.incrementar()); // 11\nconsole.log(contador.incrementar()); // 12\nconsole.log(contador.decrementar()); // 11',
+        "ejercicio": "1. Convertí estas funciones a arrow functions: función que calcula el área de un círculo, función que verifica si un string es palíndromo\n2. Creá una función generarSaludo(saludo) que retorne una función que salude con ese saludo (factory con closure)\n3. Usá arrow functions con map y filter en un array de números",
+        "pista": "const esPalindromo = s => s.toLowerCase() === s.toLowerCase().split('').reverse().join(''); — const generarSaludo = saludo => nombre => `${saludo}, ${nombre}!`"
     },
     {
-        "id": 8, "bloque": "Arrays", "titulo": "Arrays y métodos modernos",
-        "descripcion": "map, filter, reduce, find — el poder de los arrays",
-        "xp": 80,
-        "teoria": "Los arrays en JS tienen métodos poderosos: map() transforma cada elemento, filter() filtra según condición, reduce() acumula en un valor, find() busca el primero que cumple, some() verifica si alguno cumple, every() verifica si todos cumplen.",
-        "ejemplo": 'const numeros = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];\n\nconst dobles = numeros.map(n => n * 2);\nconst pares = numeros.filter(n => n % 2 === 0);\nconst suma = numeros.reduce((acc, n) => acc + n, 0);\nconst primerMayor5 = numeros.find(n => n > 5);\n\nconsole.log(dobles);       // [2,4,6,8...]\nconsole.log(pares);        // [2,4,6,8,10]\nconsole.log(suma);         // 55\nconsole.log(primerMayor5); // 6',
-        "ejercicio": "Tenés este array de productos: [{nombre:'Laptop',precio:1200},{nombre:'Mouse',precio:25},{nombre:'Monitor',precio:350}]. Usá filter para los que cuestan más de $100, map para mostrar solo los nombres, y reduce para el total.",
-        "pista": "productos.filter(p => p.precio > 100). Después .map(p => p.nombre). Para reduce: (acc, p) => acc + p.precio, 0."
+        "id": 8, "bloque": "Estructuras", "titulo": "Arrays: map, filter, reduce",
+        "descripcion": "Programación funcional con arrays", "xp": 75,
+        "teoria": "Los métodos funcionales de arrays son fundamentales en JavaScript moderno:\n\n• .map(callback) — transforma cada elemento, devuelve nuevo array\n• .filter(callback) — filtra elementos, devuelve nuevo array\n• .reduce(callback, inicial) — reduce a un único valor\n• .find(callback) — primer elemento que cumple condición\n• .findIndex(callback) — índice del primer match\n• .some(callback) — true si AL MENOS uno cumple\n• .every(callback) — true si TODOS cumplen\n• .flat() / .flatMap() — aplana arrays anidados\n• .sort(compareFn) — ordena (¡ojo: modifica el original!)\n\nEstos métodos son puros: no modifican el array original (excepto sort y splice).",
+        "ejemplo": 'const numeros = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];\n\n// map: duplicar cada número\nconst dobles = numeros.map(n => n * 2);\nconsole.log(dobles); // [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]\n\n// filter: solo pares\nconst pares = numeros.filter(n => n % 2 === 0);\nconsole.log(pares); // [2, 4, 6, 8, 10]\n\n// reduce: suma total\nconst suma = numeros.reduce((acc, n) => acc + n, 0);\nconsole.log(suma); // 55\n\n// Encadenar métodos (chaining)\nconst resultado = numeros\n    .filter(n => n % 2 === 0) // solo pares\n    .map(n => n ** 2)          // elevar al cuadrado\n    .reduce((acc, n) => acc + n, 0); // sumar\nconsole.log(resultado); // 220\n\n// Con objetos\nconst productos = [\n    { nombre: "A", precio: 100, stock: 5 },\n    { nombre: "B", precio: 50, stock: 0 },\n    { nombre: "C", precio: 200, stock: 3 },\n];\n\nconst disponibles = productos.filter(p => p.stock > 0);\nconst nombres = disponibles.map(p => p.nombre);\nconst totalValor = productos.reduce((acc, p) => acc + p.precio * p.stock, 0);\nconsole.log(nombres);\nconsole.log("Valor total:", totalValor);',
+        "ejercicio": "Dado un array de estudiantes [{nombre, nota, carrera}]:\n1. Filtrá los que aprobaron (nota >= 60)\n2. Creá un array solo con los nombres de los aprobados\n3. Calculá el promedio general con reduce\n4. Encontrá el estudiante con la nota más alta\n5. Verificá si TODOS aprobaron y si ALGUNO reprobó",
+        "pista": "const promedio = estudiantes.reduce((acc, e) => acc + e.nota, 0) / estudiantes.length; — const mejor = estudiantes.reduce((max, e) => e.nota > max.nota ? e : max);"
     },
     {
-        "id": 9, "bloque": "Async", "titulo": "Promesas y async/await",
-        "descripcion": "Código asíncrono — fetch y APIs",
-        "xp": 100,
-        "teoria": "JavaScript es asíncrono — puede hacer cosas mientras espera. fetch() hace requests HTTP. Retorna una Promise. async/await hace que el código asíncrono se lea como sincrónico. Siempre manejá errores con try/catch.",
-        "ejemplo": 'async function obtenerUsuario(id) {\n    try {\n        const response = await fetch(\n            `https://jsonplaceholder.typicode.com/users/${id}`\n        );\n        \n        if (!response.ok) {\n            throw new Error(`Error: ${response.status}`);\n        }\n        \n        const usuario = await response.json();\n        console.log(usuario.name);\n        return usuario;\n    } catch (error) {\n        console.error("Falló:", error.message);\n    }\n}\n\nobtenerUsuario(1);',
-        "ejercicio": "Usá fetch para traer datos de https://jsonplaceholder.typicode.com/posts. Mostrá los títulos de los primeros 5 posts. Manejá el error si la request falla.",
-        "pista": "const posts = await response.json(). Después posts.slice(0,5).forEach(p => console.log(p.title))."
+        "id": 9, "bloque": "Asincronía", "titulo": "Promesas y async/await",
+        "descripcion": "Código asíncrono moderno en JavaScript", "xp": 100,
+        "teoria": "JavaScript es single-threaded pero asíncrono. Para operaciones que toman tiempo (red, archivos, timers), usa el event loop.\n\nCallbacks (antiguo): función que se llama cuando termina.\nProblema: callback hell (anidación profunda).\n\nPromesas: objeto que representa un valor futuro.\nEstados: pending, fulfilled, rejected.\n.then() para el resultado, .catch() para errores, .finally() siempre.\n\nasync/await (moderno): sintaxis más limpia sobre promesas.\n• async: marca una función como asíncrona (devuelve Promise)\n• await: espera que una Promise se resuelva\n• Siempre envolvé await en try/catch\n\nPromise.all([p1, p2]): espera que TODAS las promesas terminen.\nPromise.race([p1, p2]): devuelve la primera que termine.",
+        "ejemplo": '// Simular operación asíncrona\nconst esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));\n\nconst fetchDatos = (id) => new Promise((resolve, reject) => {\n    setTimeout(() => {\n        if (id > 0) {\n            resolve({ id, nombre: `Usuario ${id}`, activo: true });\n        } else {\n            reject(new Error("ID inválido"));\n        }\n    }, 100);\n});\n\n// Con .then()/.catch()\nfetchDatos(1)\n    .then(datos => console.log("Con then:", datos))\n    .catch(err => console.error("Error:", err.message));\n\n// Con async/await (más legible)\nasync function obtenerUsuario(id) {\n    try {\n        const usuario = await fetchDatos(id);\n        console.log("Con await:", usuario);\n        return usuario;\n    } catch (error) {\n        console.error("Error:", error.message);\n        return null;\n    }\n}\n\n// Paralelo con Promise.all\nasync function main() {\n    const [u1, u2, u3] = await Promise.all([\n        fetchDatos(1),\n        fetchDatos(2),\n        fetchDatos(3),\n    ]);\n    console.log("Todos:", u1.nombre, u2.nombre, u3.nombre);\n}\n\nmain();',
+        "ejercicio": "1. Creá una función delay(ms) que retorna una Promise que se resuelve después de ms milisegundos\n2. Creá una función fetchProducto(id) que simule buscar un producto (resuelve si id>0, rechaza si no)\n3. Usá async/await con try/catch para llamarla\n4. Usá Promise.all para buscar 3 productos en paralelo y mostrá cuánto tardó en total",
+        "pista": "const inicio = Date.now(); await Promise.all([...]); console.log(`Tardó ${Date.now() - inicio}ms`); — Promise.all corre en paralelo así que es más rápido que secuencial."
     },
     {
-        "id": 10, "bloque": "Casos reales", "titulo": "Caso real: DOM y eventos",
-        "descripcion": "Manipulá la página web — getElementById, addEventListener",
-        "xp": 120,
-        "teoria": "El DOM (Document Object Model) es la representación de la página en JavaScript. getElementById() busca un elemento. innerHTML cambia el contenido. addEventListener() escucha eventos como clicks.",
-        "ejemplo": '// HTML necesario:\n// <button id="btn">Click</button>\n// <div id="resultado"></div>\n\nconst btn = document.getElementById("btn");\nconst resultado = document.getElementById("resultado");\nlet contador = 0;\n\nbtn.addEventListener("click", () => {\n    contador++;\n    resultado.innerHTML = `Clickeaste ${contador} veces`;\n    \n    if (contador >= 10) {\n        resultado.style.color = "red";\n    }\n});',
-        "ejercicio": "Creá una página HTML con un input de texto, un botón y un div. Al hacer click, tomá el texto del input y agregalo a una lista visible en el div. Agregá un botón para limpiar la lista.",
-        "pista": "document.getElementById('input').value para leer el input. Para agregar a la lista: div.innerHTML += '<p>' + texto + '</p>'."
-    },
+        "id": 10, "bloque": "DOM", "titulo": "DOM y eventos",
+        "descripcion": "Manipulá la página web con JavaScript", "xp": 125,
+        "teoria": "El DOM (Document Object Model) es la representación en árbol del HTML que JavaScript puede manipular.\n\nSeleccionar elementos:\n• document.getElementById('id')\n• document.querySelector('.clase') — primer match\n• document.querySelectorAll('div.card') — todos los matches\n\nManipular elementos:\n• elemento.textContent = 'texto'\n• elemento.innerHTML = '<b>HTML</b>'\n• elemento.classList.add/remove/toggle('clase')\n• elemento.style.color = 'red'\n• elemento.setAttribute('href', '...')\n\nCrear y agregar elementos:\n• document.createElement('div')\n• padre.appendChild(hijo)\n• padre.removeChild(hijo)\n\nEventos:\n• elemento.addEventListener('click', callback)\n• Eventos: click, input, submit, keydown, mouseover, etc.",
+        "ejemplo": '// Este código funciona en el navegador\n// En Node.js se simulará la estructura\n\n// Simular DOM en Node.js para practicar la lógica\nconst elementos = {\n    contador: { valor: 0 }\n};\n\nfunction actualizarContador() {\n    elementos.contador.valor++;\n    console.log(`Contador: ${elementos.contador.valor}`);\n}\n\nfunction resetearContador() {\n    elementos.contador.valor = 0;\n    console.log("Contador reseteado a 0");\n}\n\n// Simular eventos\nconsole.log("Inicio de la app");\nactualizarContador();\nactualizarContador();\nactualizarContador();\nresetearContador();\nactualizarContador();\n\n// En el navegador real sería:\n/*\ndocument.getElementById("incrementar").addEventListener("click", () => {\n    contador++;\n    document.getElementById("display").textContent = contador;\n});\n*/\n\nconsole.log("\\n--- Manipulación de lista ---");\nconst tareas = [];\n\nfunction agregarTarea(texto) {\n    tareas.push({ id: Date.now(), texto, completada: false });\n    console.log(`Tarea agregada: "${texto}"`);\n}\n\nfunction mostrarTareas() {\n    console.log("\\nLista de tareas:");\n    tareas.forEach((t, i) => {\n        const estado = t.completada ? "[✓]" : "[ ]";\n        console.log(`${estado} ${i + 1}. ${t.texto}`);\n    });\n}\n\nagregarTarea("Aprender JavaScript");\nagregarTarea("Practicar DOM");\ntareas[0].completada = true;\nmostrarTareas();',
+        "ejercicio": "Simulá una aplicación de tareas (sin DOM real ya que corremos en Node.js):\n1. Array de tareas con id, texto, completada, prioridad (alta/media/baja)\n2. Funciones: agregar, completar, eliminar, filtrarPorPrioridad\n3. Función renderizar() que muestra las tareas en consola de forma visual\n4. Simulá una serie de operaciones y mostrá el estado final",
+        "pista": "function renderizar(tareas) { console.log('='.repeat(30)); tareas.forEach(t => console.log(`${t.completada ? '✓' : '○'} [${t.prioridad}] ${t.texto}`)); }"
+    }
 ]
 
-@router.get("/modulos")
-def obtener_modulos():
-    return modulos
 
-@router.get("/modulos/{modulo_id}")
-def obtener_modulo(modulo_id: int):
-    modulo = next((m for m in modulos if m["id"] == modulo_id), None)
-    if not modulo:
-        return {"error": "Módulo no encontrado"}
-    return modulo
+@router.get("/modulos/javascript")
+def get_modulos_javascript():
+    return MODULOS_JS

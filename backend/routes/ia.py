@@ -1,115 +1,163 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
-from typing import Optional
 import os
 import httpx
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from typing import Optional
 
-router = APIRouter(prefix="/ia", tags=["IA"])
+router = APIRouter()
 
-historial: list[dict] = []
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 MAX_HISTORIAL = 20
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+SYSTEM_PROMPT = """Sos CodeTutor, un tutor de programación amigable y entusiasta. Tu misión es ayudar a estudiantes a aprender a programar.
 
-MODULOS_INFO = {
-    1:  "Hola Mundo — usar print() para mostrar texto",
-    2:  "Comentarios — líneas que Python ignora con #",
-    3:  "Variables — guardar datos con nombres",
-    4:  "Tipos de datos — int, float, str, bool",
-    5:  "Operadores — suma, resta, multiplicación, división",
-    6:  "Input — pedirle datos al usuario",
-    7:  "Strings — texto y sus métodos",
-    8:  "Condiciones — if, elif, else",
-    9:  "Loops for — repetir con secuencias",
-    10: "Loops while — repetir mientras se cumpla algo",
-    11: "Listas — colecciones ordenadas",
-    12: "Diccionarios — pares clave-valor",
-    13: "Funciones — organizar código con def",
-    14: "Archivos y JSON — guardar datos",
-    15: "Clases y OOP — programación orientada a objetos",
-    16: "Manejo de errores — try, except",
-    17: "Caso real: Calculadora de consola",
-    18: "Caso real: Agenda de contactos",
-    19: "Caso real: Sistema de inventario",
-    20: "Caso real: Juego de adivinar el número",
-    21: "Caso real: API REST con FastAPI",
-    22: "Caso real: Base de datos con SQL",
-    23: "Estructuras de datos: Stack y Queue",
-    24: "Estructuras de datos: Hash Map y LRU Cache",
-    25: "Algoritmos: Búsqueda y Ordenamiento",
-}
+Reglas estrictas:
+1. NUNCA des el código completo como solución. Guiá con pistas graduales.
+2. Si el estudiante pide la respuesta directa, explicá el concepto y dales una pista, no el código.
+3. Cuando el código tiene errores, señalá QUÉ está mal y POR QUÉ, pero no lo corrijas directamente.
+4. Celebrá los avances y errores que muestran aprendizaje: los errores son parte del proceso.
+5. Hablá en español latinoamericano informal: "vos", "tenés", "podés", "mirá".
+6. Máximo 5 oraciones por respuesta. Sé conciso y claro.
+7. Usá emojis con moderación para hacer la experiencia más amena.
+8. Si el código funciona bien, ¡celebralo! y sugerí cómo podría mejorarse.
+9. Enfocate en el módulo actual cuando sea relevante.
+10. Si te preguntan algo completamente fuera de programación, redirigí amablemente al tema."""
 
-SYSTEM_PROMPT = """Eres CodeTutor, un tutor de programación para principiantes absolutos.
-Tu trabajo es guiar, nunca dar la respuesta completa.
+historial: list = []
 
-Reglas:
-- NUNCA escribís el código completo que resuelve el ejercicio
-- Das pistas graduales: primero muy general, luego más específica
-- Explicás con analogías del mundo real (ej: una variable es como una caja con nombre)
-- Celebrás los avances del estudiante
-- Respondés en español latinoamericano, tono amigable y directo
-- Máximo 4 oraciones por respuesta
-- Si el estudiante está frustrado, primero validás cómo se siente
-- Si el código tiene un error, señalás QUÉ está mal pero no cómo arreglarlo directamente"""
 
-class Pregunta(BaseModel):
-    mensaje: str
-    modulo_id: Optional[int] = None
+def _get_api_key() -> Optional[str]:
+    return os.environ.get("GEMINI_API_KEY")
 
-@router.post("/preguntar")
-async def preguntar(data: Pregunta):
-    if not GEMINI_API_KEY:
-        return {"error": "Falta configurar GEMINI_API_KEY. Seguí las instrucciones del README."}
 
-    contexto_modulo = ""
-    if data.modulo_id and data.modulo_id in MODULOS_INFO:
-        contexto_modulo = f"\n\nEl estudiante está trabajando en: {MODULOS_INFO[data.modulo_id]}."
+async def _llamar_gemini(mensajes: list, system: str = SYSTEM_PROMPT) -> str:
+    api_key = _get_api_key()
+    if not api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="GEMINI_API_KEY no configurada. Configurá la variable de entorno para usar el tutor IA."
+        )
 
-    system_con_contexto = SYSTEM_PROMPT + contexto_modulo
+    contents = []
+    for msg in mensajes:
+        role = "user" if msg["role"] == "user" else "model"
+        contents.append({"role": role, "parts": [{"text": msg["content"]}]})
 
-    historial.append({"role": "user", "parts": [{"text": data.mensaje}]})
-    if len(historial) > MAX_HISTORIAL:
-        del historial[0:2]
-
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{GEMINI_URL}?key={GEMINI_API_KEY}",
-                json={
-                    "system_instruction": {"parts": [{"text": system_con_contexto}]},
-                    "contents": historial,
-                    "generationConfig": {"maxOutputTokens": 400, "temperature": 0.7}
-                },
-                timeout=30.0
-            )
-
-        if response.status_code != 200:
-            historial.pop()
-            return {"error": f"Error de Gemini ({response.status_code}): {response.text[:200]}"}
-
-        contenido = response.json()["candidates"][0]["content"]["parts"][0]["text"]
-        historial.append({"role": "model", "parts": [{"text": contenido}]})
-        return {"respuesta": contenido}
-
-    except httpx.TimeoutException:
-        if historial and historial[-1]["role"] == "user":
-            historial.pop()
-        return {"error": "La IA tardó demasiado. Intentá de nuevo."}
-    except Exception as e:
-        if historial and historial[-1]["role"] == "user":
-            historial.pop()
-        return {"error": f"Error inesperado: {str(e)}"}
-
-@router.delete("/historial")
-def limpiar_historial():
-    historial.clear()
-    return {"mensaje": "Conversación reiniciada"}
-
-@router.get("/estado")
-def estado_ia():
-    return {
-        "configurada": bool(GEMINI_API_KEY),
-        "mensaje": "IA lista (Gemini gratuito)" if GEMINI_API_KEY else "Falta GEMINI_API_KEY — leé el README",
-        "mensajes_en_historial": len(historial)
+    payload = {
+        "contents": contents,
+        "systemInstruction": {"parts": [{"text": system}]},
+        "generationConfig": {
+            "temperature": 0.7,
+            "maxOutputTokens": 500,
+            "topP": 0.9,
+        },
     }
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        try:
+            resp = await client.post(
+                f"{GEMINI_URL}?key={api_key}",
+                json=payload,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data["candidates"][0]["content"]["parts"][0]["text"]
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 400:
+                raise HTTPException(status_code=400, detail="API key inválida o request malformado.")
+            elif e.response.status_code == 429:
+                raise HTTPException(status_code=429, detail="Límite de solicitudes alcanzado. Esperá un momento.")
+            raise HTTPException(status_code=502, detail=f"Error de la API de Gemini: {e.response.status_code}")
+        except httpx.TimeoutException:
+            raise HTTPException(status_code=504, detail="La IA tardó demasiado. Intentá de nuevo.")
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Error conectando con la IA: {str(e)}")
+
+
+class PreguntaRequest(BaseModel):
+    mensaje: str
+    contexto_modulo: Optional[str] = None
+    lenguaje: Optional[str] = None
+
+
+class AnalizarRequest(BaseModel):
+    codigo: str
+    output: str
+    exito: bool
+    modulo_titulo: Optional[str] = None
+    modulo_ejercicio: Optional[str] = None
+    lenguaje: Optional[str] = None
+
+
+@router.get("/ia/estado")
+def estado_ia():
+    api_key = _get_api_key()
+    if api_key:
+        return {"configurada": True, "mensaje": "Tutor IA listo para ayudarte 🤖"}
+    return {"configurada": False, "mensaje": "Configurá GEMINI_API_KEY para activar el tutor IA"}
+
+
+@router.post("/ia/preguntar")
+async def preguntar(req: PreguntaRequest):
+    global historial
+
+    contexto = ""
+    if req.contexto_modulo:
+        contexto = f"[Contexto: el estudiante está trabajando en el módulo '{req.contexto_modulo}'"
+        if req.lenguaje:
+            contexto += f" de {req.lenguaje}"
+        contexto += f"]\n\n{req.mensaje}"
+    else:
+        contexto = req.mensaje
+
+    historial.append({"role": "user", "content": contexto})
+
+    if len(historial) > MAX_HISTORIAL:
+        historial = historial[-MAX_HISTORIAL:]
+
+    respuesta = await _llamar_gemini(historial)
+    historial.append({"role": "assistant", "content": respuesta})
+
+    return {"respuesta": respuesta, "mensajes_en_historial": len(historial)}
+
+
+@router.post("/ia/analizar")
+async def analizar_codigo(req: AnalizarRequest):
+    partes = []
+
+    if req.modulo_titulo:
+        partes.append(f"Módulo actual: '{req.modulo_titulo}'")
+    if req.lenguaje:
+        partes.append(f"Lenguaje: {req.lenguaje}")
+    if req.modulo_ejercicio:
+        partes.append(f"Ejercicio: {req.modulo_ejercicio}")
+
+    partes.append(f"\nCódigo del estudiante:\n```\n{req.codigo}\n```")
+    partes.append(f"\nResultado de ejecutar el código:")
+    partes.append(f"Estado: {'✅ Funcionó' if req.exito else '❌ Hubo un error'}")
+    partes.append(f"Output:\n{req.output}")
+
+    if req.exito:
+        partes.append("\nEl código funcionó. Analizá si resuelve correctamente el ejercicio del módulo, felicitá al estudiante y sugerí una mejora o extensión interesante.")
+    else:
+        partes.append("\nHubo un error. Ayudá al estudiante a entender QUÉ falló y POR QUÉ, con una pista para resolverlo. No des el código correcto.")
+
+    mensaje_analisis = "\n".join(partes)
+
+    mensajes_analisis = [{"role": "user", "content": mensaje_analisis}]
+    respuesta = await _llamar_gemini(mensajes_analisis)
+
+    historial.append({"role": "user", "content": f"[Análisis automático de código ejecutado]\n{mensaje_analisis}"})
+    historial.append({"role": "assistant", "content": respuesta})
+
+    if len(historial) > MAX_HISTORIAL:
+        historial = historial[-MAX_HISTORIAL:]
+
+    return {"respuesta": respuesta}
+
+
+@router.delete("/ia/historial")
+def limpiar_historial():
+    global historial
+    historial = []
+    return {"message": "Historial de conversación limpiado"}

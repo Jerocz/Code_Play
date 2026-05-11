@@ -1,44 +1,36 @@
+import os
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-import os
 
-from routes.python import router as python_router
-from routes.javascript import router as javascript_router
-from routes.cpp import router as cpp_router
-from routes.progreso import router as progreso_router
-from routes.ia import router as ia_router
+from routes import python, javascript, cpp, progreso, ejecutar, ia
 
-app = FastAPI(title="CodeTutor API", version="3.0.0")
+app = FastAPI(title="CodeTutor API", version="1.0.0")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Registrar routers
+app.include_router(python.router, prefix="/api")
+app.include_router(javascript.router, prefix="/api")
+app.include_router(cpp.router, prefix="/api")
+app.include_router(progreso.router, prefix="/api")
+app.include_router(ejecutar.router, prefix="/api")
+app.include_router(ia.router)
 
-app.include_router(python_router)
-app.include_router(javascript_router)
-app.include_router(cpp_router)
-app.include_router(progreso_router)
-app.include_router(ia_router)
+# Directorio frontend
+FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
+FRONTEND_DIR = os.path.abspath(FRONTEND_DIR)
 
-# Servir el frontend desde el servidor
-FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
+# Montar archivos estáticos
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
+
 @app.get("/")
-def home():
+def serve_index():
     return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
-@app.get("/api")
-def api_info():
-    return {
-        "app": "CodeTutor 🚀",
-        "version": "3.0",
-        "lenguajes": ["python", "javascript", "cpp"],
-        "docs": "/docs"
-    }
+
+@app.get("/{path:path}")
+def serve_frontend(path: str):
+    file_path = os.path.join(FRONTEND_DIR, path)
+    if os.path.isfile(file_path):
+        return FileResponse(file_path)
+    return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))

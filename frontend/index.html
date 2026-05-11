@@ -1,72 +1,262 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CodeTutor 🚀</title>
-<link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeTutor — Aprendé a programar</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
 </head>
 <body>
 
-<div class="container">
-
-  <div class="header">
-    <div>
-      <h1>CodeTutor 🚀</h1>
-      <p class="subtitulo">Aprendé Python desde cero hasta casos reales</p>
+<!-- ═══════════════════════════════════ PANTALLA 1: INICIO ═══════════════════════════════════ -->
+<div id="pantalla-inicio" class="pantalla activa">
+  <header class="inicio-header">
+    <div class="logo">
+      <span class="logo-icon">⚡</span>
+      <span class="logo-text">CodeTutor</span>
     </div>
-    <div class="stats">
-      <div class="card stat-card">
-        <div class="stat-label">⚡ XP</div>
-        <div class="stat-valor" id="xp">0</div>
+    <div class="nivel-badge" id="nivel-badge-inicio">
+      <span id="nivel-titulo-inicio">Principiante</span>
+      <span class="xp-badge" id="xp-badge-inicio">0 XP</span>
+    </div>
+  </header>
+
+  <main class="inicio-main">
+    <h1 class="inicio-titulo">Aprendé a programar<br /><span class="highlight">jugando</span></h1>
+    <p class="inicio-subtitulo">Módulos interactivos · Tutor IA · Editor de código · Progreso real</p>
+
+    <div class="lenguajes-grid">
+      <div class="lang-card" data-lang="python" onclick="seleccionarLenguaje('python')">
+        <div class="lang-icon">🐍</div>
+        <h2 class="lang-nombre">Python</h2>
+        <p class="lang-desc">El mejor lenguaje para empezar. Sintaxis limpia, versátil y muy demandado.</p>
+        <div class="lang-stats">
+          <span class="stat"><strong>25</strong> módulos</span>
+          <span class="stat"><strong>9</strong> bloques</span>
+          <span class="stat"><strong>2700</strong> XP</span>
+        </div>
+        <div class="lang-progreso-bar">
+          <div class="lang-progreso-fill" id="prog-python" style="width:0%"></div>
+        </div>
+        <div class="lang-progreso-texto" id="prog-python-texto">0 / 25 módulos</div>
+        <button class="btn-empezar">Empezar →</button>
       </div>
-      <div class="card stat-card">
-        <div class="stat-label">🏆 Nivel</div>
-        <div class="stat-valor" id="nivel">1</div>
+
+      <div class="lang-card" data-lang="javascript" onclick="seleccionarLenguaje('javascript')">
+        <div class="lang-icon">🟨</div>
+        <h2 class="lang-nombre">JavaScript</h2>
+        <p class="lang-desc">El lenguaje de la web. Indispensable para desarrollo frontend y backend.</p>
+        <div class="lang-stats">
+          <span class="stat"><strong>10</strong> módulos</span>
+          <span class="stat"><strong>4</strong> bloques</span>
+          <span class="stat"><strong>700</strong> XP</span>
+        </div>
+        <div class="lang-progreso-bar">
+          <div class="lang-progreso-fill" id="prog-javascript" style="width:0%"></div>
+        </div>
+        <div class="lang-progreso-texto" id="prog-javascript-texto">0 / 10 módulos</div>
+        <button class="btn-empezar">Empezar →</button>
       </div>
-      <div class="card stat-card">
-        <div class="stat-label">✅ Módulos</div>
-        <div class="stat-valor"><span id="completados">0</span><span style="color:#404060">/25</span></div>
+
+      <div class="lang-card" data-lang="cpp" onclick="seleccionarLenguaje('cpp')">
+        <div class="lang-icon">⚙️</div>
+        <h2 class="lang-nombre">C++</h2>
+        <p class="lang-desc">Rendimiento máximo. Ideal para sistemas, juegos y competencia algorítmica.</p>
+        <div class="lang-stats">
+          <span class="stat"><strong>10</strong> módulos</span>
+          <span class="stat"><strong>5</strong> bloques</span>
+          <span class="stat"><strong>875</strong> XP</span>
+        </div>
+        <div class="lang-progreso-bar">
+          <div class="lang-progreso-fill" id="prog-cpp" style="width:0%"></div>
+        </div>
+        <div class="lang-progreso-texto" id="prog-cpp-texto">0 / 10 módulos</div>
+        <button class="btn-empezar">Empezar →</button>
       </div>
     </div>
-  </div>
-
-  <div class="progreso-barra-wrap">
-    <div class="progreso-barra-bg">
-      <div class="progreso-barra-fill" id="barra-progreso" style="width:0%"></div>
-    </div>
-    <span class="progreso-texto" id="progreso-texto">0 de 25 módulos</span>
-  </div>
-
-  <div id="bloques-contenedor"></div>
-
-  <!-- MODAL -->
-  <div class="modal-overlay" id="modal-overlay" onclick="cerrarModal()">
-    <div class="modal" onclick="event.stopPropagation()">
-      <button class="modal-cerrar" onclick="cerrarModal()">✕</button>
-      <div id="modal-contenido"></div>
-    </div>
-  </div>
-
-  <!-- TUTOR IA -->
-  <div class="ia card">
-    <div class="ia-header">
-      <h2>⚡ Tutor IA <span style="font-size:13px;color:#7070a0;font-weight:400">(Gemini — gratis)</span></h2>
-      <div class="ia-estado" id="ia-estado">Verificando...</div>
-    </div>
-    <p class="ia-desc">Preguntame lo que quieras sobre el módulo que estés haciendo. No te doy la respuesta directa, pero sí te guío hasta que llegues solo.</p>
-
-    <div class="chat-historial" id="chat-historial"></div>
-
-    <div class="ia-input-wrap">
-      <input type="text" id="pregunta" placeholder="Escribí tu pregunta..." onkeydown="if(event.key==='Enter') preguntarIA()" />
-      <button id="btn-preguntar" onclick="preguntarIA()">Enviar</button>
-    </div>
-    <button class="btn-secundario" onclick="limpiarConversacion()">🗑 Nueva conversación</button>
-  </div>
-
+  </main>
 </div>
 
-<script src="app.js"></script>
+<!-- ═══════════════════════════════════ PANTALLA 2: MÓDULOS ══════════════════════════════════ -->
+<div id="pantalla-modulos" class="pantalla">
+  <header class="modulos-header">
+    <button class="btn-back" onclick="irAInicio()">← Inicio</button>
+    <div class="modulos-lang-info">
+      <span id="modulos-lang-icon" class="modulos-lang-icon">🐍</span>
+      <span id="modulos-lang-nombre" class="modulos-lang-nombre">Python</span>
+    </div>
+    <div class="modulos-xp">
+      <div class="nivel-info">
+        <span id="modulos-nivel-titulo">Principiante</span>
+        <span id="modulos-xp-valor">0 XP</span>
+      </div>
+      <div class="xp-bar-wrap">
+        <div class="xp-bar-fill" id="modulos-xp-fill" style="width:0%"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="modulos-progreso-global">
+    <div class="progreso-texto">
+      <span id="mod-completados">0</span> / <span id="mod-total">0</span> módulos completados
+      — <span id="mod-xp-ganado">0</span> XP ganados
+    </div>
+    <div class="progreso-bar-global">
+      <div class="progreso-bar-fill" id="modulos-barra-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="modulos-contenido" id="modulos-lista"></div>
+</div>
+
+<!-- ═══════════════════════════════════ PANTALLA 3: EDITOR ═══════════════════════════════════ -->
+<div id="pantalla-editor" class="pantalla">
+  <header class="editor-header">
+    <button class="btn-back" onclick="irAModulos()">← Módulos</button>
+    <div class="editor-modulo-info">
+      <span id="editor-modulo-numero" class="modulo-numero-badge">#1</span>
+      <span id="editor-modulo-titulo">Hola Mundo</span>
+    </div>
+    <div class="editor-header-actions">
+      <button class="btn-completar" id="btn-completar-editor" onclick="marcarCompletado()">
+        ✓ Marcar completado
+      </button>
+    </div>
+  </header>
+
+  <div class="editor-layout">
+    <!-- COLUMNA IZQUIERDA: Concepto -->
+    <div class="editor-col editor-col-izq">
+      <div class="editor-section">
+        <h3 class="section-title">📖 Concepto</h3>
+        <div class="teoria-text" id="editor-teoria"></div>
+      </div>
+      <div class="editor-section">
+        <h3 class="section-title">🎯 Ejercicio</h3>
+        <div class="ejercicio-text" id="editor-ejercicio"></div>
+      </div>
+      <div class="editor-section">
+        <button class="btn-pista" id="btn-pista" onclick="togglePista()">
+          💡 Mostrar pista
+        </button>
+        <div class="pista-text oculta" id="editor-pista"></div>
+      </div>
+    </div>
+
+    <!-- COLUMNA CENTRAL: Editor de código -->
+    <div class="editor-col editor-col-centro">
+      <div class="editor-section editor-code-section">
+        <div class="code-header">
+          <span class="code-lang-badge" id="code-lang-badge">Python</span>
+          <button class="btn-limpiar" onclick="limpiarEditor()" title="Limpiar editor">🗑</button>
+        </div>
+        <div class="code-editor-wrap">
+          <textarea
+            id="code-editor"
+            class="code-editor"
+            spellcheck="false"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            placeholder="# Escribí tu código acá..."
+          ></textarea>
+        </div>
+        <div class="editor-actions">
+          <button class="btn-run" id="btn-run" onclick="ejecutarCodigo()">
+            ▶ Correr
+          </button>
+          <span class="run-tiempo" id="run-tiempo"></span>
+        </div>
+      </div>
+
+      <div class="editor-section output-section" id="output-section">
+        <div class="output-header">
+          <span class="output-title">Output</span>
+          <span class="output-status" id="output-status"></span>
+        </div>
+        <pre class="output-pre" id="output-pre">El output aparecerá aquí...</pre>
+      </div>
+    </div>
+
+    <!-- COLUMNA DERECHA: Tutor IA -->
+    <div class="editor-col editor-col-der">
+      <div class="ia-header">
+        <span class="ia-title">🤖 Tutor IA</span>
+        <div class="ia-estado" id="ia-estado-badge">...</div>
+        <button class="btn-limpiar-ia" onclick="limpiarChatIA()" title="Limpiar chat">↺</button>
+      </div>
+
+      <div class="ia-chat" id="ia-chat">
+        <div class="ia-mensaje ia-bienvenida">
+          <span class="ia-avatar">🤖</span>
+          <div class="ia-burbuja">
+            ¡Hola! Soy tu tutor IA. Corrí tu código y te voy a dar feedback automático. También podés preguntarme cualquier duda sobre el módulo.
+          </div>
+        </div>
+      </div>
+
+      <div class="ia-input-wrap">
+        <textarea
+          id="ia-input"
+          class="ia-input"
+          placeholder="Preguntame algo sobre el módulo..."
+          rows="2"
+          onkeydown="iaInputKeydown(event)"
+        ></textarea>
+        <button class="btn-ia-enviar" onclick="enviarPreguntaIA()">Enviar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ MODAL MÓDULO ══════════════════════════════════════════ -->
+<div id="modal-overlay" class="modal-overlay oculta" onclick="cerrarModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="cerrarModal()">✕</button>
+
+    <div class="modal-header">
+      <span class="modal-bloque" id="modal-bloque">Bloque</span>
+      <span class="modal-xp" id="modal-xp">+50 XP</span>
+    </div>
+    <h2 class="modal-titulo" id="modal-titulo">Título del módulo</h2>
+    <p class="modal-desc" id="modal-desc">Descripción del módulo</p>
+
+    <div class="modal-tabs">
+      <button class="modal-tab activo" onclick="switchTab('teoria', this)">📖 Teoría</button>
+      <button class="modal-tab" onclick="switchTab('ejemplo', this)">💻 Ejemplo</button>
+      <button class="modal-tab" onclick="switchTab('ejercicio', this)">🎯 Ejercicio</button>
+    </div>
+
+    <div class="modal-tab-content" id="modal-teoria">
+      <div class="modal-teoria-text" id="modal-teoria-text"></div>
+    </div>
+    <div class="modal-tab-content oculta" id="modal-ejemplo">
+      <pre class="modal-code" id="modal-codigo"></pre>
+    </div>
+    <div class="modal-tab-content oculta" id="modal-ejercicio">
+      <div class="modal-ejercicio-text" id="modal-ejercicio-text"></div>
+      <div class="modal-pista-wrap">
+        <button class="btn-pista-modal" id="btn-pista-modal" onclick="togglePistaModal()">
+          💡 Ver pista
+        </button>
+        <div class="modal-pista-text oculta" id="modal-pista-text"></div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-modal-practicar" onclick="abrirEditor()">▶ Practicar en el editor</button>
+      <button class="btn-modal-completar" id="btn-modal-completar" onclick="marcarCompletadoDesdeModal()">
+        ✓ Marcar completado
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ TOAST NOTIFICACIÓN ════════════════════════════════════ -->
+<div id="toast" class="toast oculta"></div>
+
+<script src="/static/app.js"></script>
 </body>
 </html>

@@ -1,288 +1,211 @@
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/python", tags=["Python"])
+router = APIRouter()
 
-modulos = [
-
-    # ══════════════════════════════════════════
-    # BLOQUE 1 — FUNDAMENTOS ABSOLUTOS
-    # ══════════════════════════════════════════
+MODULOS_PYTHON = [
     {
         "id": 1, "bloque": "Fundamentos", "titulo": "Hola Mundo",
-        "descripcion": "Tu primer programa — mostrá texto en pantalla con print()",
-        "xp": 20,
-        "teoria": "print() es la función más básica de Python. Muestra cualquier cosa en la pantalla. Es como decirle a Python: 'mostrá esto'.",
-        "ejemplo": "print('Hola mundo')\nprint('Esto es Python')\nprint(42)\nprint(3.14)",
-        "ejercicio": "Escribí un programa que imprima en 3 líneas separadas: tu nombre, tu edad y tu ciudad favorita.",
-        "pista": "Necesitás 3 líneas, cada una con print(). El texto va entre comillas, los números no."
+        "descripcion": "Tu primer programa en Python", "xp": 50,
+        "teoria": "En Python, print() es la función más fundamental: muestra información en pantalla.\n\nLa sintaxis es simple: escribís print() con el contenido entre paréntesis. Para texto usás comillas simples o dobles.\n\nPython ejecuta el código línea por línea, de arriba hacia abajo. No necesitás compilar: simplemente corrés el archivo.",
+        "ejemplo": 'print("¡Hola, Mundo!")\nprint("Mi primer programa")\nprint(2026)\nprint(3.14)\nprint("Podés combinar:", 1 + 1)',
+        "ejercicio": "Escribí un programa que muestre en pantalla:\n1. Tu nombre\n2. Tu lenguaje de programación favorito\n3. El resultado de 15 + 27",
+        "pista": "Usá print() tres veces. Para texto: print(\"tu texto\"). Para matemáticas: print(15 + 27)"
     },
     {
         "id": 2, "bloque": "Fundamentos", "titulo": "Comentarios",
-        "descripcion": "Líneas que Python ignora — para explicar tu código",
-        "xp": 20,
-        "teoria": "Un comentario empieza con #. Python lo ignora completamente. Sirven para explicar qué hace tu código. Cuando volvés a leer código de hace semanas, los comentarios te salvan.",
-        "ejemplo": "# Este es un comentario\nprint('Hola')  # También puede ir al final\n# print('Esto NO se ejecuta')\nprint('Esto sí se ejecuta')",
-        "ejercicio": "Tomá el programa del módulo anterior y agregá un comentario arriba de cada print() explicando qué hace.",
-        "pista": "Poné # antes del texto del comentario. Ejemplo: # Imprimo mi nombre"
+        "descripcion": "Documentá tu código con comentarios", "xp": 50,
+        "teoria": "Los comentarios son texto que Python ignora al ejecutar. Sirven para explicar el código, dejar notas o desactivar líneas temporalmente.\n\nDos tipos:\n• Comentario de una línea: empieza con #\n• Comentario multilínea: texto entre triple comillas \"\"\" o '''\n\nBuena práctica: comentá el POR QUÉ, no el QUÉ. El código ya muestra qué hace; el comentario explica la razón.",
+        "ejemplo": '# Este programa saluda al usuario\nprint("¡Hola!")  # muestra el saludo\n\n"""\nEsto es un docstring.\nPuede ocupar varias líneas.\nSe usa para documentar funciones y módulos.\n"""\n\n# print("Esta línea está desactivada")\nprint("Esta sí se ejecuta")',
+        "ejercicio": "Escribí un programa con:\n1. Un docstring al inicio explicando qué hace\n2. Dos print() con comentarios explicativos al lado\n3. Una línea de código 'desactivada' con #",
+        "pista": "Empezá con \"\"\"Descripción\"\"\" en la primera línea, luego print(\"texto\")  # comentario"
     },
     {
         "id": 3, "bloque": "Fundamentos", "titulo": "Variables",
-        "descripcion": "Guardá datos con nombres para usarlos después",
-        "xp": 30,
-        "teoria": "Una variable es como una caja con nombre. Guardás algo adentro y lo podés usar después. El = no significa 'igual' matemático, significa 'guardá esto acá'.",
-        "ejemplo": "nombre = 'Ana'\nedad = 25\naltura = 1.65\nactivo = True\n\nprint(nombre)\nprint(edad)\nprint(f'Me llamo {nombre} y tengo {edad} años')",
-        "ejercicio": "Creá variables para tu nombre, edad y ciudad. Usá las 3 en un print() que diga: 'Me llamo [nombre], tengo [edad] años y vivo en [ciudad].'",
-        "pista": "Creá 3 variables primero. Después usá f-strings: print(f'Me llamo {nombre}...')"
+        "descripcion": "Almacená y reutilizá datos con variables", "xp": 50,
+        "teoria": "Una variable es como una caja etiquetada donde guardás un valor. En Python no necesitás declarar el tipo: simplemente asignás con =.\n\nReglas para nombres:\n• Empezar con letra o _\n• Sin espacios (usá snake_case: mi_variable)\n• Sin palabras reservadas (if, for, print...)\n• Distingue mayúsculas: nombre ≠ Nombre\n\nPodés cambiar el valor de una variable en cualquier momento, y Python recordará el último valor asignado.",
+        "ejemplo": 'nombre = "Ana"\nedad = 25\naltura = 1.68\nes_estudiante = True\n\nprint(nombre)\nprint(edad)\nprint("Altura:", altura)\n\n# Reasignar\nedad = 26\nprint("Ahora tiene:", edad, "años")\n\n# Múltiple asignación\nx = y = z = 0\na, b, c = 1, 2, 3',
+        "ejercicio": "Creá variables para describir a una persona:\n• nombre (string)\n• edad (entero)\n• altura (decimal)\n• activo (booleano)\n\nLuego mostralas todas con print()",
+        "pista": "nombre = \"tu nombre\" — las strings van entre comillas. Los números no llevan comillas. True/False empiezan con mayúscula."
     },
     {
         "id": 4, "bloque": "Fundamentos", "titulo": "Tipos de datos",
-        "descripcion": "int, float, str, bool — los 4 tipos básicos",
-        "xp": 30,
-        "teoria": "Python tiene tipos distintos para distintos datos. int son números enteros (5, -3, 100). float son decimales (3.14, -0.5). str es texto ('hola'). bool es True o False. type() te dice qué tipo es algo.",
-        "ejemplo": "edad = 25          # int\nprecio = 19.99     # float\nnombre = 'Ana'     # str\nactivo = True      # bool\n\nprint(type(edad))    # <class 'int'>\nprint(type(precio))  # <class 'float'>\nprint(type(nombre))  # <class 'str'>\nprint(type(activo))  # <class 'bool'>",
-        "ejercicio": "Creá una variable de cada tipo. Imprimí el valor y el tipo de cada una usando type(). Luego intentá sumar el int con el float y mostrá el resultado.",
-        "pista": "Para cada variable hacé print(valor) y print(type(valor)). Para la suma: resultado = entero + decimal"
+        "descripcion": "Entendé los tipos básicos de Python", "xp": 50,
+        "teoria": "Python tiene estos tipos básicos:\n• int: enteros (1, -5, 1000)\n• float: decimales (3.14, -0.5)\n• str: texto (\"hola\", 'mundo')\n• bool: True o False\n• None: ausencia de valor\n\nPodés verificar el tipo con type() y convertir entre tipos con int(), float(), str(), bool().\n\nLas conversiones se llaman 'casting'. Ojo: int(\"hola\") da error, pero int(\"42\") funciona.",
+        "ejemplo": 'entero = 42\ndecimal = 3.14\ntexto = "Python"\nbool_val = True\nnada = None\n\nprint(type(entero))   # <class \'int\'>\nprint(type(decimal))  # <class \'float\'>\nprint(type(texto))    # <class \'str\'>\nprint(type(bool_val)) # <class \'bool\'>\n\n# Conversiones\nprint(int(3.9))    # 3 (trunca, no redondea)\nprint(float(5))    # 5.0\nprint(str(100))    # "100"\nprint(bool(0))     # False\nprint(bool(1))     # True\nprint(bool(""))    # False',
+        "ejercicio": "Creá una variable de cada tipo básico (int, float, str, bool, None).\nUsá type() para mostrar el tipo de cada una.\nConvertí el entero a float y el float a string, mostrá los resultados.",
+        "pista": "Para cada variable: print(type(mi_variable)). Para convertir: nueva = float(mi_entero)"
     },
     {
-        "id": 5, "bloque": "Fundamentos", "titulo": "Operadores matemáticos",
-        "descripcion": "Suma, resta, multiplicación, división y más",
-        "xp": 30,
-        "teoria": "Python puede hacer matemáticas: + suma, - resta, * multiplica, / divide (siempre da decimal), // divide sin decimales, % da el resto de la división, ** es potencia.",
-        "ejemplo": "a, b = 10, 3\nprint(a + b)   # 13\nprint(a - b)   # 7\nprint(a * b)   # 30\nprint(a / b)   # 3.333...\nprint(a // b)  # 3\nprint(a % b)   # 1 (resto)\nprint(a ** b)  # 1000 (10³)",
-        "ejercicio": "Una remera cuesta $1500 y tiene 30% de descuento. Calculá el precio final usando variables y operadores. Mostrá el precio original, el descuento en pesos y el precio final.",
-        "pista": "descuento = precio * 0.30 y precio_final = precio - descuento. Usá f-strings para mostrar los resultados."
+        "id": 5, "bloque": "Fundamentos", "titulo": "Operadores",
+        "descripcion": "Operaciones matemáticas y de comparación", "xp": 50,
+        "teoria": "Python tiene varios grupos de operadores:\n\nAritméticos: + - * / // % **\n• // es división entera (piso)\n• % es el módulo (resto)\n• ** es potencia (2**10 = 1024)\n\nComparación: == != < > <= >=\n• Devuelven True o False\n• == compara valores (no uses = que asigna)\n\nAsignación compuesta: += -= *= /=\n• x += 5 es lo mismo que x = x + 5\n\nEl orden de operaciones sigue las matemáticas: paréntesis primero, luego ** , luego * / //, luego + -",
+        "ejemplo": 'a, b = 17, 5\n\nprint(a + b)   # 22\nprint(a - b)   # 12\nprint(a * b)   # 85\nprint(a / b)   # 3.4\nprint(a // b)  # 3  (división entera)\nprint(a % b)   # 2  (resto)\nprint(a ** b)  # 1419857\n\nprint(a == b)  # False\nprint(a > b)   # True\nprint(a != b)  # True\n\nx = 10\nx += 3\nprint(x)  # 13',
+        "ejercicio": "Escribí un programa que calcule para los números 20 y 7:\n1. Suma, resta, multiplicación y división\n2. División entera y resto\n3. Comparaciones: igual, mayor que, distinto\n4. Usá += para incrementar una variable",
+        "pista": "Asigná a=20, b=7 y usá cada operador en un print(). Para comparaciones el resultado es True/False."
     },
     {
         "id": 6, "bloque": "Fundamentos", "titulo": "Input del usuario",
-        "descripcion": "Pedile datos al usuario con input()",
-        "xp": 40,
-        "teoria": "input() pausa el programa y espera que el usuario escriba algo. SIEMPRE retorna texto (str), aunque el usuario escriba un número. Si necesitás operar con él, convertilo: int(input()) o float(input()).",
-        "ejemplo": "nombre = input('¿Cómo te llamás? ')\nprint(f'Hola, {nombre}!')\n\nedad = int(input('¿Cuántos años tenés? '))\nprint(f'El año que viene tenés {edad + 1} años')",
-        "ejercicio": "Pedí al usuario su nombre y año de nacimiento. Calculá su edad (2024 - año_nacimiento) y mostrá: 'Hola [nombre], tenés [edad] años.'",
-        "pista": "El año de nacimiento hay que convertirlo a int. La edad se calcula restando al año actual."
+        "descripcion": "Interactuá con el usuario con input()", "xp": 50,
+        "teoria": "La función input() pausa el programa y espera que el usuario escriba algo. Lo que ingresa siempre llega como string.\n\nSintaxis: variable = input(\"Mensaje al usuario: \")\n\nComo siempre es string, si necesitás un número debés convertirlo:\n• int(input(...)) para enteros\n• float(input(...)) para decimales\n\nOjo: si el usuario escribe algo que no es número y tratás de convertirlo, da ValueError. Por eso es buena práctica manejar errores (lo veremos en módulos avanzados).",
+        "ejemplo": 'nombre = input("¿Cómo te llamás? ")\nprint("Hola,", nombre)\n\nedad_str = input("¿Cuántos años tenés? ")\nedad = int(edad_str)\nprint("En 10 años tendrás:", edad + 10)\n\n# Forma compacta\naltura = float(input("¿Cuánto medís en metros? "))\nprint(f"Tu altura: {altura:.2f} metros")',
+        "ejercicio": "Creá un programa que:\n1. Pida el nombre del usuario\n2. Pida su año de nacimiento (como entero)\n3. Calcule y muestre su edad aproximada (2026 - año)\n4. Muestre un mensaje personalizado con su nombre y edad",
+        "pista": "anio = int(input(\"Año de nacimiento: \")) — luego edad = 2026 - anio"
     },
-
-    # ══════════════════════════════════════════
-    # BLOQUE 2 — STRINGS Y TEXTO
-    # ══════════════════════════════════════════
     {
         "id": 7, "bloque": "Strings", "titulo": "Strings en profundidad",
-        "descripcion": "Texto, métodos, slicing y f-strings",
-        "xp": 50,
-        "teoria": "Los strings tienen métodos útiles: .upper() mayúsculas, .lower() minúsculas, .strip() quita espacios, .replace() reemplaza, .split() divide en lista, len() cuenta caracteres. Con [0] accedés al primer caracter.",
-        "ejemplo": "s = '  Hola Mundo  '\nprint(s.strip())        # 'Hola Mundo'\nprint(s.upper())        # '  HOLA MUNDO  '\nprint(s.replace('Hola', 'Chau'))\nprint(len(s))           # 14\nprint(s[2])             # 'H'\nprint(s[-1])            # ' '\n\npalabras = 'Python es genial'\nprint(palabras.split()) # ['Python', 'es', 'genial']",
-        "ejercicio": "Pedí el nombre completo del usuario. Mostrá: en mayúsculas, en minúsculas, cuántas letras tiene (sin espacios), y la primera y última letra.",
-        "pista": "Para quitar espacios del conteo: nombre.replace(' ', ''). Para primera letra: nombre[0]. Para última: nombre[-1]."
+        "descripcion": "Métodos, slicing y operaciones con texto", "xp": 75,
+        "teoria": "Los strings en Python tienen decenas de métodos útiles:\n• .upper() / .lower() — mayúsculas/minúsculas\n• .strip() — elimina espacios al inicio y fin\n• .split(sep) — divide en lista\n• .join(lista) — une lista en string\n• .replace(viejo, nuevo) — reemplaza texto\n• .find(texto) — posición del texto (-1 si no está)\n• .startswith() / .endswith() — comienza/termina con\n\nSlicing: texto[inicio:fin:paso]\n• texto[0] — primer carácter\n• texto[-1] — último carácter\n• texto[1:4] — caracteres del 1 al 3\n• texto[::-1] — texto al revés",
+        "ejemplo": 'frase = "  Hola Mundo Python  "\n\nprint(frase.strip())        # "Hola Mundo Python"\nprint(frase.upper())        # "  HOLA MUNDO PYTHON  "\nprint(frase.lower())        # "  hola mundo python  "\nprint(frase.replace("Hola", "Chau"))\n\npalabras = frase.strip().split(" ")\nprint(palabras)  # [\'Hola\', \'Mundo\', \'Python\']\nprint("-".join(palabras))  # Hola-Mundo-Python\n\nlenguaje = "Python"\nprint(lenguaje[0])     # P\nprint(lenguaje[-1])    # n\nprint(lenguaje[1:4])   # yth\nprint(lenguaje[::-1])  # nohtyP\nprint(len(lenguaje))   # 6',
+        "ejercicio": "Dado el string \"  programar con python es increíble  \":\n1. Eliminá los espacios extra con strip()\n2. Convertilo a mayúsculas\n3. Reemplazá 'python' por 'Python'\n4. Separalo en palabras con split()\n5. Mostrá el primer y último carácter del string limpio",
+        "pista": "Guardá el string en una variable, luego aplicá cada método: texto = texto.strip() — y después usá texto[0] y texto[-1]"
     },
     {
         "id": 8, "bloque": "Strings", "titulo": "f-strings avanzados",
-        "descripcion": "Formatear números, alinear texto y expresiones",
-        "xp": 40,
-        "teoria": "Los f-strings permiten formatear valores dentro de {}. :.2f muestra 2 decimales. :, agrega separador de miles. :.1% convierte a porcentaje. Podés poner expresiones directamente: {precio * 0.9}.",
-        "ejemplo": "precio = 1234567.89\npct = 0.1567\n\nprint(f'Precio: ${precio:,.2f}')   # $1,234,567.89\nprint(f'Porcentaje: {pct:.1%}')     # 15.7%\nprint(f'Redondeado: {precio:.0f}') # 1234568\n\nnombre = 'Ana'\nprint(f'{'izquierda':<20}|')\nprint(f'{'derecha':>20}|')",
-        "ejercicio": "Mostrá una factura simple: precio unitario $1500, cantidad 3 unidades, 21% de IVA. Mostrá subtotal, IVA en pesos y total, todo con formato de precio (2 decimales y separador de miles).",
-        "pista": "subtotal = precio * cantidad. iva = subtotal * 0.21. total = subtotal + iva. Usá :,.2f para el formato."
+        "descripcion": "Formateo de strings moderno y potente", "xp": 75,
+        "teoria": "Los f-strings (formatted strings) son la forma moderna de insertar valores en strings. Se escriben con f antes de las comillas.\n\nDentro de las llaves {} podés poner:\n• Variables: f\"Hola {nombre}\"\n• Expresiones: f\"Resultado: {2 + 2}\"\n• Llamadas a métodos: f\"{texto.upper()}\"\n• Formato numérico: f\"{precio:.2f}\" (2 decimales)\n• Alineación: f\"{valor:>10}\" (alinear derecha en 10 chars)\n• Condicional: f\"{'par' if n%2==0 else 'impar'}\"\n\nAntes de f-strings se usaba .format() y %. Los f-strings son más legibles y rápidos.",
+        "ejemplo": "nombre = \"Maria\"\nedad = 28\nprecio = 1234.5678\n\nprint(f\"Hola, {nombre}!\")\nprint(f\"Edad: {edad}, proximo anio: {edad + 1}\")\nprint(f\"Precio: ${precio:.2f}\")       # 2 decimales\nprint(f\"Precio: ${precio:,.2f}\")      # con separador de miles\nprint(f\"Nombre: {nombre!r}\")          # con comillas\nprint(f\"{'Activo':>10}\")             # alineado derecha\nprint(f\"Numero: {42:05d}\")           # rellenar con ceros\nresultado = 'par' if edad % 2 == 0 else 'impar'\nprint(f\"{nombre} tiene edad {resultado}\")",
+        "ejercicio": "Creá variables: nombre, profesion, salario (decimal), años_experiencia.\nMostrá un resumen formateado:\n• Nombre en mayúsculas\n• Salario con 2 decimales y símbolo $\n• Un mensaje condicional si tiene más o menos de 5 años de experiencia",
+        "pista": "f\"{nombre.upper()}\" para mayúsculas. f\"${salario:.2f}\" para el salario. f\"{'senior' if años_experiencia >= 5 else 'junior'}\" para la condición."
     },
-
-    # ══════════════════════════════════════════
-    # BLOQUE 3 — DECISIONES
-    # ══════════════════════════════════════════
     {
         "id": 9, "bloque": "Decisiones", "titulo": "if / elif / else",
-        "descripcion": "Tomá decisiones según condiciones",
-        "xp": 60,
-        "teoria": "if ejecuta código solo si la condición es True. elif (else if) prueba otra condición si la anterior falló. else ejecuta si ninguna condición fue True. Solo se ejecuta UNO de los bloques.",
-        "ejemplo": "nota = 75\n\nif nota >= 90:\n    print('Sobresaliente')\nelif nota >= 80:\n    print('Muy bueno')\nelif nota >= 60:\n    print('Aprobado')\nelse:\n    print('Desaprobado')",
-        "ejercicio": "Pedí la temperatura actual. Según el valor decí qué ropa usar: menos de 10° → 'Campera gruesa', 10-20° → 'Rompevientos', 20-30° → 'Remera', más de 30° → 'Lo menos posible'.",
-        "pista": "Pedí la temperatura con float(input()). Usá if/elif/else comparando con los rangos. El orden importa."
+        "descripcion": "Tomá decisiones en tu código", "xp": 75,
+        "teoria": "Las estructuras condicionales permiten ejecutar código solo si se cumple una condición.\n\nSintaxis:\nif condicion:\n    # código si es True\nelif otra_condicion:\n    # código si la primera es False y esta es True\nelse:\n    # código si todas son False\n\nImportante: Python usa indentación (4 espacios) para definir bloques. No hay llaves como en otros lenguajes.\n\nPodés anidar if dentro de if, pero evitá anidación excesiva (más de 3 niveles es señal de que el código se puede mejorar).",
+        "ejemplo": 'nota = 75\n\nif nota >= 90:\n    print("Excelente - A")\nelif nota >= 80:\n    print("Muy bien - B")\nelif nota >= 70:\n    print("Bien - C")\nelif nota >= 60:\n    print("Suficiente - D")\nelse:\n    print("Insuficiente - F")\n\n# Condicional en una línea (ternario)\nresultado = "aprobado" if nota >= 60 else "reprobado"\nprint(f"Estás {resultado}")\n\n# if con múltiples condiciones\nedad = 20\ntiene_id = True\nif edad >= 18 and tiene_id:\n    print("Puede ingresar")',
+        "ejercicio": "Escribí un programa que pida un número al usuario y diga:\n• Si es positivo, negativo o cero\n• Si es par o impar\n• Si está entre 1 y 100 (inclusive)\n\nUsá if/elif/else para cada caso.",
+        "pista": "n = int(input(...)) — luego if n > 0: ... elif n < 0: ... else: ... Para par: if n % 2 == 0:"
     },
     {
         "id": 10, "bloque": "Decisiones", "titulo": "Operadores lógicos",
-        "descripcion": "and, or, not — combinar condiciones",
-        "xp": 50,
-        "teoria": "and: las DOS condiciones deben ser True. or: AL MENOS UNA debe ser True. not: invierte True/False. Podés encadenar comparaciones: 18 <= edad <= 65 es válido en Python.",
-        "ejemplo": "edad = 25\ntiene_dni = True\n\nif edad >= 18 and tiene_dni:\n    print('Puede votar')\n\nif edad < 18 or edad > 65:\n    print('Tarifa especial')\n\nif not tiene_dni:\n    print('Falta el DNI')\n\n# Rango elegante\nif 20 <= edad <= 30:\n    print('Joven adulto')",
-        "ejercicio": "Sistema de descuentos: precio base $5000. Si es socio: 10% off. Si el día es lunes o martes: 15% off adicional. Si la compra supera $3000: 5% off adicional. Mostrá el precio final.",
-        "pista": "Pedí is_socio (True/False) y dia con input. Calculá cada descuento por separado y sumalos. precio_final = precio * (1 - descuento_total)."
-    },
-
-    # ══════════════════════════════════════════
-    # BLOQUE 4 — LOOPS
-    # ══════════════════════════════════════════
-    {
-        "id": 11, "bloque": "Loops", "titulo": "Loop for",
-        "descripcion": "Repetí acciones recorriendo secuencias",
-        "xp": 60,
-        "teoria": "for recorre cada elemento de una secuencia. range(n) genera números del 0 al n-1. range(a,b) del a al b-1. enumerate() da índice y valor. zip() recorre dos listas a la vez.",
-        "ejemplo": "# Recorrer lista\nfrutas = ['manzana', 'banana', 'naranja']\nfor fruta in frutas:\n    print(fruta)\n\n# range\nfor i in range(1, 6):\n    print(i)  # 1 2 3 4 5\n\n# enumerate\nfor i, fruta in enumerate(frutas, 1):\n    print(f'{i}. {fruta}')",
-        "ejercicio": "Tabla de multiplicar del número que elija el usuario. Mostrá: '3 x 1 = 3', '3 x 2 = 6', etc. hasta el 10.",
-        "pista": "Pedí el número con input(). Usá for i in range(1, 11). Dentro: print(f'{num} x {i} = {num*i}')"
+        "descripcion": "Combiná condiciones con and, or, not", "xp": 75,
+        "teoria": "Los operadores lógicos combinan condiciones booleanas:\n\n• and: True solo si AMBAS son True\n• or: True si AL MENOS UNA es True\n• not: invierte el valor (True→False, False→True)\n\nTabla de verdad de and:\nTrue and True = True\nTrue and False = False\nFalse and True = False\nFalse and False = False\n\nPython evalúa de izquierda a derecha y usa 'short-circuit':\n• En and, si el primero es False, no evalúa el segundo\n• En or, si el primero es True, no evalúa el segundo\n\nOperador in: verifica si un elemento está en una colección.",
+        "ejemplo": 'edad = 25\ningresos = 3000\ntiene_trabajo = True\n\n# Elegibilidad para un crédito\nif edad >= 18 and ingresos >= 2000 and tiene_trabajo:\n    print("Elegible para crédito")\nelse:\n    print("No elegible")\n\n# or\nes_estudiante = False\nes_jubilado = True\nif es_estudiante or es_jubilado:\n    print("Descuento del 50%")\n\n# not\nesta_cerrado = False\nif not esta_cerrado:\n    print("Tienda abierta")\n\n# in y not in\nlenguajes = ["Python", "JavaScript", "C++"]\nif "Python" in lenguajes:\n    print("Python está en la lista")',
+        "ejercicio": "Creá un sistema de acceso que verifique:\n1. Edad >= 18 AND tiene cuenta (bool)\n2. Si NO tiene cuenta, mostrar cómo registrarse\n3. Si la contraseña está en una lista de contraseñas_validas (lista)\n4. Combiná condiciones con and/or/not",
+        "pista": "contraseñas_validas = [\"abc123\", \"python2026\"] — luego if password in contraseñas_validas and edad >= 18:"
     },
     {
-        "id": 12, "bloque": "Loops", "titulo": "Loop while",
-        "descripcion": "Repetí mientras se cumpla una condición",
-        "xp": 60,
-        "teoria": "while repite mientras la condición sea True. Si la condición nunca cambia, loop infinito. break sale del loop. continue salta al siguiente ciclo. Patrón común: while True con break para menús.",
-        "ejemplo": "# Contar\ncontador = 1\nwhile contador <= 5:\n    print(contador)\n    contador += 1\n\n# Menú con while True\nwhile True:\n    opcion = input('1-Ver, 2-Salir: ')\n    if opcion == '2':\n        break\n    print('Mostrando...')",
-        "ejercicio": "Adivinar el número: el programa elige un número del 1 al 100 (usá random.randint). El usuario tiene 7 intentos. Después de cada intento decí 'muy alto', 'muy bajo' o '¡correcto!'.",
-        "pista": "import random al inicio. numero = random.randint(1, 100). Usá while intentos < 7. Pedí el intento con int(input())."
+        "id": 11, "bloque": "Loops", "titulo": "Bucle for",
+        "descripcion": "Repetí acciones con el bucle for", "xp": 100,
+        "teoria": "El bucle for itera sobre cualquier iterable: listas, strings, rangos, etc.\n\nSintaxis:\nfor variable in iterable:\n    # código a repetir\n\nrange() genera secuencias numéricas:\n• range(5) — 0, 1, 2, 3, 4\n• range(1, 6) — 1, 2, 3, 4, 5\n• range(0, 10, 2) — 0, 2, 4, 6, 8\n• range(10, 0, -1) — 10, 9, ..., 1\n\nFunciones útiles con for:\n• enumerate(lista) — da (índice, valor)\n• zip(lista1, lista2) — combina dos listas\n• break — sale del bucle\n• continue — salta a la siguiente iteración",
+        "ejemplo": 'frutas = ["manzana", "banana", "cereza"]\nfor fruta in frutas:\n    print(fruta)\n\n# range\nfor i in range(5):\n    print(i, end=" ")  # 0 1 2 3 4\nprint()  # nueva línea\n\n# enumerate\nfor i, fruta in enumerate(frutas):\n    print(f"{i+1}. {fruta}")\n\n# Acumular\ntotal = 0\nfor n in range(1, 11):\n    total += n\nprint(f"Suma 1-10: {total}")  # 55\n\n# break y continue\nfor n in range(10):\n    if n == 3:\n        continue  # salta el 3\n    if n == 7:\n        break  # para en el 7\n    print(n, end=" ")',
+        "ejercicio": "Escribí un programa que:\n1. Itere del 1 al 20 con range()\n2. Para cada número, imprima si es par o impar\n3. Calcule la suma solo de los pares\n4. Use enumerate() con una lista de 3 materias para mostrarlas numeradas",
+        "pista": "for n in range(1, 21): — luego if n % 2 == 0: suma += n. Para enumerate: for i, materia in enumerate(materias, 1):"
+    },
+    {
+        "id": 12, "bloque": "Loops", "titulo": "Bucle while",
+        "descripcion": "Repetí mientras se cumpla una condición", "xp": 100,
+        "teoria": "El bucle while repite código mientras una condición sea True.\n\nSintaxis:\nwhile condicion:\n    # código\n\nCuándo usar while vs for:\n• for: cuando sabés cuántas iteraciones o iterás un iterable\n• while: cuando no sabés cuántas iteraciones, dependés de input o condición externa\n\nOjo con los bucles infinitos: siempre asegurate de que la condición eventualmente se vuelva False.\n\nwhile True con break: patrón común para menús interactivos.\n\nwhile/else: el bloque else se ejecuta si el while terminó naturalmente (sin break).",
+        "ejemplo": '# Contador básico\ncuenta = 0\nwhile cuenta < 5:\n    print(cuenta)\n    cuenta += 1\n\n# Menú interactivo\nwhile True:\n    opcion = input("\\n1. Saludar  2. Salir\\nOpción: ")\n    if opcion == "1":\n        print("¡Hola!")\n    elif opcion == "2":\n        print("¡Chau!")\n        break\n    else:\n        print("Opción inválida")\n\n# Adivinar número\nimport random\nsecreto = random.randint(1, 10)\nintentos = 0\nwhile True:\n    guess = int(input("Adiviná (1-10): "))\n    intentos += 1\n    if guess == secreto:\n        print(f"¡Correcto en {intentos} intentos!")\n        break\n    print("Más alto" if guess < secreto else "Más bajo")',
+        "ejercicio": "Creá un juego de adivinanza:\n1. Generá un número random entre 1 y 100 con random.randint()\n2. El usuario tiene máximo 7 intentos\n3. Después de cada intento decí si es más alto o más bajo\n4. Al terminar mostrá si ganó o perdió y cuántos intentos usó",
+        "pista": "import random — secreto = random.randint(1, 100) — usa while intentos < 7: y break cuando adivine"
     },
     {
         "id": 13, "bloque": "Loops", "titulo": "List comprehensions",
-        "descripcion": "Crear listas en una línea — forma pythónica",
-        "xp": 50,
-        "teoria": "[expresión for elemento in secuencia if condición]. Es más corto y más rápido que un for con append. No abuses — si es muy complejo, mejor un for normal.",
-        "ejemplo": "# Forma larga\ncuadrados = []\nfor x in range(1, 6):\n    cuadrados.append(x**2)\n\n# Con comprehension\ncuadrados = [x**2 for x in range(1, 6)]\n# [1, 4, 9, 16, 25]\n\n# Con condición\npares = [x for x in range(20) if x % 2 == 0]\n\n# Transformar strings\nnombres = ['ana', 'luis', 'SARA']\nlimpios = [n.strip().title() for n in nombres]",
-        "ejercicio": "Tenés esta lista de notas: [45, 78, 92, 55, 88, 33, 71, 95, 60, 48]. Usando comprehensions creá: lista de aprobados (>=60), lista de los cuadrados de los aprobados, y un diccionario {nota: 'aprobado'/'desaprobado'}.",
-        "pista": "aprobados = [n for n in notas if n >= 60]. Para el diccionario: {n: 'aprobado' if n>=60 else 'desaprobado' for n in notas}."
+        "descripcion": "Creá listas de forma elegante y concisa", "xp": 100,
+        "teoria": "Una list comprehension crea una lista nueva aplicando una expresión a cada elemento de un iterable, opcionalmente con un filtro.\n\nSintaxis:\n[expresion for elemento in iterable]\n[expresion for elemento in iterable if condicion]\n\nVentajas sobre el for tradicional:\n• Más conciso y legible\n• Más rápido (optimizado en Python)\n• Expresa la intención claramente\n\nTambién existen:\n• Dict comprehension: {k: v for k, v in ...}\n• Set comprehension: {expr for x in ...}\n• Generator expression: (expr for x in ...) — perezosa, no crea toda la lista",
+        "ejemplo": '# For tradicional vs comprehension\nnumeros = [1, 2, 3, 4, 5]\n\n# Tradicional\ncuadrados_trad = []\nfor n in numeros:\n    cuadrados_trad.append(n ** 2)\n\n# Comprehension\ncuadrados = [n ** 2 for n in numeros]\nprint(cuadrados)  # [1, 4, 9, 16, 25]\n\n# Con filtro\npares = [n for n in range(20) if n % 2 == 0]\nprint(pares)  # [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]\n\n# Transformar strings\npalabras = ["hola", "mundo", "python"]\nmayusculas = [p.upper() for p in palabras]\nprint(mayusculas)  # [\'HOLA\', \'MUNDO\', \'PYTHON\']\n\n# Dict comprehension\ncuadrados_dict = {n: n**2 for n in range(1, 6)}\nprint(cuadrados_dict)  # {1:1, 2:4, 3:9, 4:16, 5:25}',
+        "ejercicio": "Usá list comprehensions para:\n1. Crear una lista de los cuadrados del 1 al 15\n2. Filtrar solo los múltiplos de 3 de esa lista\n3. Convertir una lista de temperaturas en Celsius [0, 20, 37, 100] a Fahrenheit (F = C * 9/5 + 32)\n4. Crear un dict {palabra: largo} para una lista de palabras",
+        "pista": "fahrenheit = [c * 9/5 + 32 for c in celsius] — para el dict: {p: len(p) for p in palabras}"
     },
-
-    # ══════════════════════════════════════════
-    # BLOQUE 5 — ESTRUCTURAS DE DATOS
-    # ══════════════════════════════════════════
     {
         "id": 14, "bloque": "Estructuras de datos", "titulo": "Listas",
-        "descripcion": "Colecciones ordenadas — la estructura más usada",
-        "xp": 70,
-        "teoria": "Las listas guardan elementos en orden. Se modifican (son mutables). append() agrega al final, pop() saca el último, insert() agrega en posición, remove() elimina por valor, sort() ordena. len() da la longitud.",
-        "ejemplo": "frutas = ['manzana', 'banana', 'naranja']\nfrutas.append('uva')\nfrutas.insert(1, 'kiwi')\nprint(frutas[0])   # manzana\nprint(frutas[-1])  # uva\nfrutas.sort()\nfrutas.remove('banana')\nsacado = frutas.pop()  # saca el último",
-        "ejercicio": "Sistema de lista de compras: el usuario puede agregar ítems, ver la lista numerada, eliminar por número y ver cuántos ítems hay. Usá un menú con while.",
-        "pista": "Usá una lista vacía. Para eliminar por número: lista.pop(numero - 1). Mostrá la lista con enumerate()."
+        "descripcion": "La estructura de datos más versátil de Python", "xp": 100,
+        "teoria": "Las listas son colecciones ordenadas y mutables que pueden contener cualquier tipo de dato, incluso mezclados.\n\nOperaciones principales:\n• lista.append(x) — agrega al final\n• lista.insert(i, x) — inserta en posición i\n• lista.remove(x) — elimina primera ocurrencia\n• lista.pop(i) — elimina y devuelve elemento\n• lista.index(x) — posición de x\n• lista.count(x) — cuántas veces aparece x\n• lista.sort() — ordena in-place\n• sorted(lista) — devuelve nueva lista ordenada\n• lista.reverse() — invierte in-place\n• lista + lista2 — concatena\n• lista * 3 — repite",
+        "ejemplo": 'tareas = ["estudiar", "programar", "leer"]\n\n# Agregar\ntareas.append("ejercitar")\ntareas.insert(1, "desayunar")\nprint(tareas)\n\n# Acceder\nprint(tareas[0])   # primera\nprint(tareas[-1])  # última\nprint(tareas[1:3]) # slice\n\n# Eliminar\ntareas.remove("leer")\nextraida = tareas.pop()  # extrae la última\nprint(f"Extraída: {extraida}")\n\n# Buscar\nif "programar" in tareas:\n    idx = tareas.index("programar")\n    print(f"Programar está en posición {idx}")\n\n# Ordenar\nnumeros = [3, 1, 4, 1, 5, 9, 2, 6]\nnumeros.sort()\nprint(numeros)\nprint(sorted([3,1,4,1,5], reverse=True))',
+        "ejercicio": "Creá un mini gestor de lista de compras:\n1. Lista inicial con 3 productos\n2. Agregá 2 productos más con append() e insert()\n3. Eliminá uno con remove()\n4. Mostrá la lista ordenada alfabéticamente\n5. Mostrá cuántos productos hay con len()",
+        "pista": "productos = [\"leche\", \"pan\", \"huevos\"] — luego productos.append(\"queso\") — len(productos) para contar"
     },
     {
         "id": 15, "bloque": "Estructuras de datos", "titulo": "Diccionarios",
-        "descripcion": "Pares clave-valor — como un objeto del mundo real",
-        "xp": 70,
-        "teoria": "Los diccionarios guardan datos con nombre. persona['nombre'] accede al valor. .get() no da error si la clave no existe. .items() permite iterar clave y valor juntos. Son perfectos para representar objetos.",
-        "ejemplo": "persona = {\n    'nombre': 'Ana',\n    'edad': 25,\n    'ciudad': 'Buenos Aires'\n}\n\nprint(persona['nombre'])          # Ana\nprint(persona.get('email', 'N/A'))  # N/A\n\npersona['email'] = 'ana@test.com'\n\nfor clave, valor in persona.items():\n    print(f'{clave}: {valor}')",
-        "ejercicio": "Agenda de contactos: diccionario donde la clave es el nombre y el valor es el teléfono. Menú para: agregar contacto, buscar por nombre, ver todos, eliminar.",
-        "pista": "agenda = {}. Para agregar: agenda[nombre] = telefono. Para buscar: agenda.get(nombre, 'No encontrado')."
+        "descripcion": "Almacená datos como pares clave-valor", "xp": 100,
+        "teoria": "Los diccionarios almacenan pares clave:valor. Son como un JSON en Python. Las claves son únicas y generalmente strings.\n\nDesde Python 3.7, los diccionarios mantienen el orden de inserción.\n\nOperaciones clave:\n• d[clave] — accede (da KeyError si no existe)\n• d.get(clave, default) — accede sin error\n• d[clave] = valor — asigna o actualiza\n• del d[clave] — elimina\n• d.keys() — todas las claves\n• d.values() — todos los valores\n• d.items() — pares (clave, valor)\n• clave in d — verifica existencia\n• d.update(otro_dict) — fusiona\n• d.pop(clave) — elimina y devuelve",
+        "ejemplo": 'persona = {\n    "nombre": "Carlos",\n    "edad": 30,\n    "lenguajes": ["Python", "JavaScript"],\n    "activo": True\n}\n\n# Acceder\nprint(persona["nombre"])\nprint(persona.get("email", "sin email"))  # default\n\n# Modificar\npersona["edad"] = 31\npersona["ciudad"] = "Buenos Aires"\n\n# Iterar\nfor clave, valor in persona.items():\n    print(f"{clave}: {valor}")\n\n# Diccionario anidado\nuniversidad = {\n    "carrera": "Sistemas",\n    "materias": {\n        "primer_año": ["Algo I", "Mate"],\n        "segundo_año": ["Algo II", "Bases"]\n    }\n}\nprint(universidad["materias"]["primer_año"])',
+        "ejercicio": "Creá un diccionario para un producto de una tienda con: nombre, precio, stock, categoría, disponible (bool).\n1. Mostrá cada campo formateado\n2. Aplicá un descuento del 10% al precio\n3. Reducí el stock en 1 y verificá si quedó en 0 para marcar disponible=False\n4. Iterá con .items() para mostrar todo",
+        "pista": "producto = {\"nombre\": \"...\", \"precio\": 100.0, ...} — producto[\"precio\"] *= 0.9 para el descuento"
     },
-
-    # ══════════════════════════════════════════
-    # BLOQUE 6 — FUNCIONES
-    # ══════════════════════════════════════════
     {
         "id": 16, "bloque": "Funciones", "titulo": "Funciones básicas",
-        "descripcion": "Organizá código reutilizable con def",
-        "xp": 80,
-        "teoria": "Una función es un bloque de código con nombre. def la define, return devuelve un valor. Los parámetros son los datos que recibe. Si no tiene return, devuelve None. Los valores por defecto se ponen con =.",
-        "ejemplo": "def saludar(nombre, saludo='Hola'):\n    return f'{saludo}, {nombre}!'\n\nprint(saludar('Ana'))          # Hola, Ana!\nprint(saludar('Luis', 'Buenas'))  # Buenas, Luis!\n\ndef calcular_imc(peso, altura):\n    imc = peso / (altura ** 2)\n    return round(imc, 1)\n\nresultado = calcular_imc(70, 1.75)\nprint(f'IMC: {resultado}')",
-        "ejercicio": "Creá estas 3 funciones: es_primo(n) que retorna True/False, celsius_a_fahrenheit(c) que convierte temperatura, y validar_email(email) que retorna True si tiene @ y un punto después del @.",
-        "pista": "Para es_primo: probá si n es divisible por algún número del 2 al n-1. Para email: '@' in email and '.' in email.split('@')[1]."
+        "descripcion": "Encapsulá código reutilizable con funciones", "xp": 125,
+        "teoria": "Las funciones son bloques de código reutilizables con un nombre. Se definen con def.\n\nSintaxis:\ndef nombre_funcion(parametro1, parametro2):\n    # código\n    return resultado\n\nConceptos clave:\n• Parámetros: variables en la definición\n• Argumentos: valores pasados al llamar\n• return: devuelve un valor (sin return devuelve None)\n• Podés devolver múltiples valores con tuplas\n• Parámetros con valor por defecto: def f(x, y=10)\n• Scope: variables locales solo existen dentro de la función\n\nBuenas prácticas:\n• Una función, una responsabilidad\n• Nombre descriptivo con verbo: calcular_iva, obtener_usuario\n• No más de 20-25 líneas",
+        "ejemplo": 'def saludar(nombre, formal=False):\n    if formal:\n        return f"Buenos días, {nombre}."\n    return f"¡Hola, {nombre}!"\n\nprint(saludar("Ana"))\nprint(saludar("Dr. Pérez", formal=True))\n\ndef calcular_iva(precio, tasa=0.21):\n    iva = precio * tasa\n    total = precio + iva\n    return iva, total  # devuelve tupla\n\niva, total = calcular_iva(100)\nprint(f"IVA: ${iva:.2f}, Total: ${total:.2f}")\n\ndef es_primo(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n\nfor n in range(2, 20):\n    if es_primo(n):\n        print(n, end=" ")',
+        "ejercicio": "Escribí estas funciones:\n1. celsius_a_fahrenheit(c) — convierte temperatura\n2. es_palindromo(texto) — True si es palíndromo (ej: \"anilina\")\n3. contar_vocales(texto) — cuenta vocales en un string\n4. Probá cada función con al menos 2 ejemplos",
+        "pista": "Para palíndromo: return texto.lower() == texto.lower()[::-1]. Para vocales: sum(1 for c in texto if c.lower() in 'aeiouáéíóú')"
     },
     {
         "id": 17, "bloque": "Funciones", "titulo": "Funciones avanzadas",
-        "descripcion": "*args, **kwargs, lambda y decoradores",
-        "xp": 80,
-        "teoria": "*args acepta cantidad variable de argumentos (llegan como tupla). **kwargs acepta argumentos nombrados variables (llegan como dict). lambda crea funciones en una línea. Los decoradores modifican funciones con @.",
-        "ejemplo": "def sumar(*numeros):\n    return sum(numeros)\n\nprint(sumar(1, 2, 3, 4, 5))  # 15\n\ndef mostrar(**datos):\n    for k, v in datos.items():\n        print(f'{k}: {v}')\n\nmostrar(nombre='Ana', edad=25)\n\n# Lambda\ndoble = lambda x: x * 2\nnombres = ['Sara', 'Ana', 'Luis']\nordenados = sorted(nombres, key=lambda n: len(n))",
-        "ejercicio": "Creá un decorador medir_tiempo que imprima cuánto tardó en ejecutarse cualquier función. Aplicalo a una función que calcule el factorial de 1000.",
-        "pista": "import time. El decorador recibe la función, define wrapper() que llama start=time.time(), ejecuta la función, imprime time.time()-start."
+        "descripcion": "*args, **kwargs, lambdas y decoradores", "xp": 125,
+        "teoria": "Python tiene características avanzadas para funciones:\n\n*args: acepta cualquier cantidad de argumentos posicionales como tupla.\n**kwargs: acepta cualquier cantidad de argumentos con nombre como dict.\n\nFunciones lambda: funciones anónimas de una línea.\nlambda x: expresion\n\nFunciones de orden superior: funciones que reciben o devuelven funciones.\n• map(func, iterable) — aplica función a cada elemento\n• filter(func, iterable) — filtra por condición\n• sorted(lista, key=func) — ordena con criterio personalizado\n\nDecoradores: funciones que modifican el comportamiento de otras funciones. Se usan con @nombre_decorador.",
+        "ejemplo": 'def suma(*args):\n    return sum(args)\n\nprint(suma(1, 2, 3))      # 6\nprint(suma(1, 2, 3, 4, 5)) # 15\n\ndef crear_perfil(**kwargs):\n    for k, v in kwargs.items():\n        print(f"  {k}: {v}")\n\ncrear_perfil(nombre="Ana", edad=25, ciudad="Córdoba")\n\n# Lambda\ncuadrado = lambda x: x ** 2\nprint(cuadrado(5))  # 25\n\nnumeros = [5, 2, 8, 1, 9, 3]\nprint(sorted(numeros, key=lambda x: -x))  # descendente\n\n# map y filter\ndobles = list(map(lambda x: x * 2, numeros))\ngrandes = list(filter(lambda x: x > 4, numeros))\nprint(dobles)\nprint(grandes)\n\n# Decorador simple\ndef mayusculas(func):\n    def wrapper(*args, **kwargs):\n        resultado = func(*args, **kwargs)\n        return resultado.upper()\n    return wrapper\n\n@mayusculas\ndef saludar(nombre):\n    return f"hola {nombre}"\n\nprint(saludar("mundo"))  # HOLA MUNDO',
+        "ejercicio": "1. Escribí una función estadisticas(*numeros) que devuelva un dict con: minimo, maximo, promedio, cantidad.\n2. Usá sorted() con lambda para ordenar una lista de dicts por algún campo.\n3. Creá un decorador medir_tiempo que use time.time() para mostrar cuánto tarda una función.",
+        "pista": "import time — def medir_tiempo(func): def wrapper(*args): inicio=time.time(); resultado=func(*args); print(f'{time.time()-inicio:.4f}s'); return resultado; return wrapper"
     },
-
-    # ══════════════════════════════════════════
-    # BLOQUE 7 — ARCHIVOS Y ERRORES
-    # ══════════════════════════════════════════
     {
         "id": 18, "bloque": "Archivos y errores", "titulo": "Archivos y JSON",
-        "descripcion": "Guardá datos que persisten entre ejecuciones",
-        "xp": 80,
-        "teoria": "open() abre archivos. Siempre usá with para que se cierren solos. 'r' lee, 'w' escribe (sobreescribe), 'a' agrega al final. json.dump() guarda un dict en JSON. json.load() lo carga de vuelta.",
-        "ejemplo": "import json\nimport os\n\n# Guardar\ndatos = {'nombre': 'Ana', 'puntos': 1500}\nwith open('datos.json', 'w') as f:\n    json.dump(datos, f, indent=2)\n\n# Cargar\nif os.path.exists('datos.json'):\n    with open('datos.json', 'r') as f:\n        cargado = json.load(f)\n    print(cargado['nombre'])",
-        "ejercicio": "Diario personal: el usuario puede escribir entradas (con fecha automática), ver todas las entradas y borrar la última. Todo se guarda en un archivo JSON y persiste entre ejecuciones.",
-        "pista": "Usá datetime.now().strftime('%Y-%m-%d') para la fecha. Guardá una lista de {'fecha': ..., 'texto': ...}. Cargá al inicio con json.load si el archivo existe."
+        "descripcion": "Leé y escribí archivos y datos JSON", "xp": 125,
+        "teoria": "Python puede leer y escribir archivos con la función open().\n\nModos de apertura:\n• 'r' — leer (default)\n• 'w' — escribir (borra el archivo existente)\n• 'a' — agregar al final\n• 'r+' — leer y escribir\n• 'b' — modo binario (rb, wb)\n\nSiempre usá with open() as f: — cierra el archivo automáticamente.\n\nJSON (JavaScript Object Notation) es el formato estándar para intercambiar datos:\n• json.dumps(objeto) — Python → string JSON\n• json.loads(string) — string JSON → Python\n• json.dump(objeto, archivo) — Python → archivo JSON\n• json.load(archivo) — archivo JSON → Python\n\nLos dicts de Python se convierten a objetos JSON y viceversa.",
+        "ejemplo": 'import json\n\n# Escribir archivo de texto\nwith open("notas.txt", "w", encoding="utf-8") as f:\n    f.write("Primera línea\\n")\n    f.write("Segunda línea\\n")\n\n# Leer archivo de texto\nwith open("notas.txt", "r", encoding="utf-8") as f:\n    contenido = f.read()\n    print(contenido)\n\n# Leer línea por línea\nwith open("notas.txt", "r", encoding="utf-8") as f:\n    for linea in f:\n        print(linea.strip())\n\n# JSON\ndatos = {\n    "nombre": "Ana",\n    "scores": [95, 87, 92],\n    "activo": True\n}\n\nwith open("datos.json", "w", encoding="utf-8") as f:\n    json.dump(datos, f, indent=2, ensure_ascii=False)\n\nwith open("datos.json", "r", encoding="utf-8") as f:\n    cargado = json.load(f)\n    print(cargado["nombre"])',
+        "ejercicio": "Creá un sistema simple de agenda:\n1. Guardá una lista de contactos (dicts con nombre, telefono, email) en contactos.json\n2. Leé el archivo y mostrá todos los contactos formateados\n3. Agregá un contacto nuevo y guardá el archivo actualizado",
+        "pista": "contactos = [{\"nombre\":\"Ana\",...}] — json.dump(contactos, f, indent=2) — luego cargá con json.load(f) y hacé .append(nuevo)"
     },
     {
         "id": 19, "bloque": "Archivos y errores", "titulo": "Manejo de errores",
-        "descripcion": "try, except, finally — código que no se rompe",
-        "xp": 70,
-        "teoria": "try ejecuta código que puede fallar. except captura el error. finally siempre se ejecuta. Podés crear excepciones propias con class MiError(Exception). Mejor capturar errores específicos que Exception genérico.",
-        "ejemplo": "def dividir(a, b):\n    try:\n        return a / b\n    except ZeroDivisionError:\n        return 'Error: no se puede dividir por cero'\n    except TypeError:\n        return 'Error: los valores deben ser números'\n\nclass EdadInvalidaError(Exception):\n    pass\n\ndef validar_edad(edad):\n    if not 0 <= edad <= 150:\n        raise EdadInvalidaError(f'Edad inválida: {edad}')",
-        "ejercicio": "Calculadora que nunca se rompe: pedí dos números y una operación (+,-,*,/). Manejá: división por cero, texto en lugar de número, operación inválida. Repetí hasta que el usuario escriba 'salir'.",
-        "pista": "Usá try/except ValueError para capturar cuando el usuario escribe texto en vez de número. ZeroDivisionError para la división."
+        "descripcion": "Manejá excepciones con try/except", "xp": 125,
+        "teoria": "Los errores en Python se llaman excepciones. Sin manejo, detienen el programa.\n\ntry/except captura errores y permite manejarlos:\n\ntry:\n    # código que puede fallar\nexcept TipoError as e:\n    # qué hacer si falla\nelse:\n    # si NO hubo error\nfinally:\n    # siempre se ejecuta\n\nExcepciones comunes:\n• ValueError — valor incorrecto (int(\"hola\"))\n• TypeError — tipo incorrecto (\"a\" + 1)\n• ZeroDivisionError — división por cero\n• FileNotFoundError — archivo no existe\n• KeyError — clave no existe en dict\n• IndexError — índice fuera de rango\n• AttributeError — atributo no existe\n\nPodés crear excepciones propias heredando de Exception.",
+        "ejemplo": '# Básico\ntry:\n    numero = int(input("Ingresá un número: "))\n    resultado = 100 / numero\n    print(f"100 / {numero} = {resultado}")\nexcept ValueError:\n    print("Error: eso no es un número")\nexcept ZeroDivisionError:\n    print("Error: no se puede dividir por cero")\nexcept Exception as e:\n    print(f"Error inesperado: {e}")\nelse:\n    print("Todo salió bien")\nfinally:\n    print("Operación terminada")\n\n# Excepción personalizada\nclass EdadInvalidaError(Exception):\n    pass\n\ndef validar_edad(edad):\n    if not isinstance(edad, int):\n        raise TypeError("La edad debe ser un entero")\n    if edad < 0 or edad > 150:\n        raise EdadInvalidaError(f"Edad inválida: {edad}")\n    return True\n\ntry:\n    validar_edad(-5)\nexcept EdadInvalidaError as e:\n    print(f"Error de edad: {e}")',
+        "ejercicio": "Escribí una función cargar_json(ruta) que:\n1. Intente abrir y leer un archivo JSON\n2. Maneje FileNotFoundError mostrando mensaje amigable\n3. Maneje json.JSONDecodeError si el JSON está mal formado\n4. Use finally para confirmar que el intento se realizó\n5. Probá con un archivo que existe y uno que no",
+        "pista": "import json — try: with open(ruta) as f: return json.load(f) — except FileNotFoundError: print(f'Archivo {ruta} no encontrado')"
     },
-
-    # ══════════════════════════════════════════
-    # BLOQUE 8 — OOP
-    # ══════════════════════════════════════════
     {
         "id": 20, "bloque": "OOP", "titulo": "Clases y objetos",
-        "descripcion": "Agrupá datos y comportamiento en una clase",
-        "xp": 100,
-        "teoria": "Una clase es una plantilla. Un objeto es una instancia de esa plantilla. __init__ es el constructor. self se refiere al objeto actual. Los métodos son funciones que pertenecen a la clase. __str__ define cómo se muestra el objeto.",
-        "ejemplo": "class CuentaBancaria:\n    def __init__(self, titular, saldo=0):\n        self.titular = titular\n        self._saldo = saldo\n\n    def depositar(self, monto):\n        if monto > 0:\n            self._saldo += monto\n            print(f'+${monto} depositado')\n\n    def ver_saldo(self):\n        return self._saldo\n\n    def __str__(self):\n        return f'Cuenta de {self.titular}: ${self._saldo}'\n\ncuenta = CuentaBancaria('Ana', 1000)\ncuenta.depositar(500)\nprint(cuenta)",
-        "ejercicio": "Clase Producto para un e-commerce: tiene nombre, precio y stock. Métodos: vender(cantidad) que reduce el stock, aplicar_descuento(porcentaje), y esta_disponible() que retorna True si hay stock.",
-        "pista": "En vender(), verificá que haya suficiente stock antes de reducirlo. Si no hay: raise ValueError('Stock insuficiente')."
+        "descripcion": "Programación Orientada a Objetos en Python", "xp": 150,
+        "teoria": "La POO organiza el código en 'objetos' que combinan datos (atributos) y comportamiento (métodos).\n\nClase: plantilla o molde para crear objetos\nObjeto: instancia de una clase\n\n__init__: método especial (constructor) que se llama al crear el objeto. Recibe self (referencia al objeto) y los parámetros iniciales.\n\nMétodos especiales (dunder):\n• __str__ — representación string (print)\n• __repr__ — representación oficial\n• __len__ — longitud\n• __eq__ — igualdad (==)\n• __lt__ — menor que (<)\n\nAtributos de clase vs de instancia:\n• Clase: compartidos por todos los objetos\n• Instancia: específicos de cada objeto (self.x)",
+        "ejemplo": 'class Rectangulo:\n    # Atributo de clase\n    forma = "rectangular"\n    \n    def __init__(self, ancho, alto):\n        self.ancho = ancho  # atributo de instancia\n        self.alto = alto\n    \n    def area(self):\n        return self.ancho * self.alto\n    \n    def perimetro(self):\n        return 2 * (self.ancho + self.alto)\n    \n    def es_cuadrado(self):\n        return self.ancho == self.alto\n    \n    def __str__(self):\n        return f"Rectángulo {self.ancho}x{self.alto}"\n    \n    def __eq__(self, otro):\n        return self.area() == otro.area()\n\nr1 = Rectangulo(5, 3)\nr2 = Rectangulo(4, 4)\n\nprint(r1)              # Rectángulo 5x3\nprint(r1.area())       # 15\nprint(r2.es_cuadrado()) # True\nprint(r1 == r2)        # False\nprint(Rectangulo.forma) # rectangular',
+        "ejercicio": "Creá una clase CuentaBancaria con:\n• Atributos: titular, saldo (default 0), historial (lista de movimientos)\n• Métodos: depositar(monto), retirar(monto) [con validación de saldo], ver_historial(), __str__\n• Cada movimiento en historial: {'tipo': 'depósito', 'monto': X, 'saldo_final': Y}",
+        "pista": "def retirar(self, monto): if monto > self.saldo: print('Saldo insuficiente'); return False — self.saldo -= monto; self.historial.append({...})"
     },
     {
         "id": 21, "bloque": "OOP", "titulo": "Herencia y polimorfismo",
-        "descripcion": "Reutilizá y extendé clases existentes",
-        "xp": 100,
-        "teoria": "La herencia permite que una clase hijo tenga todo lo de la clase padre más sus propias cosas. super().__init__() llama al constructor del padre. El polimorfismo permite que distintos objetos respondan distinto al mismo método.",
-        "ejemplo": "class Animal:\n    def __init__(self, nombre):\n        self.nombre = nombre\n\n    def sonido(self):\n        raise NotImplementedError\n\nclass Perro(Animal):\n    def sonido(self):\n        return 'Guau!'\n\nclass Gato(Animal):\n    def sonido(self):\n        return 'Miau!'\n\nanimales = [Perro('Rex'), Gato('Mimi')]\nfor a in animales:\n    print(f'{a.nombre}: {a.sonido()}')",
-        "ejercicio": "Sistema de empleados: clase base Empleado con nombre y salario_base. Subclases EmpleadoFull (con bono anual del 20%) y Contratista (tarifa por hora). Ambas tienen calcular_salario_mensual() pero calculan diferente.",
-        "pista": "EmpleadoFull: salario_mensual = salario_base + (salario_base * 0.20 / 12). Contratista: salario_mensual = tarifa_hora * horas_mes."
-    },
-
-    # ══════════════════════════════════════════
-    # BLOQUE 9 — CASOS REALES
-    # ══════════════════════════════════════════
-    {
-        "id": 22, "bloque": "Casos reales", "titulo": "Caso real: Gestor de tareas",
-        "descripcion": "App completa con persistencia — como un Todoist básico",
-        "xp": 150,
-        "teoria": "Este proyecto combina todo: listas, diccionarios, funciones, archivos JSON y manejo de errores. Es el tipo de proyecto que ponés en tu portfolio.",
-        "ejemplo": "# Estructura de una tarea\ntarea = {\n    'id': 1,\n    'texto': 'Aprender Python',\n    'completada': False,\n    'fecha': '2024-01-15',\n    'prioridad': 'alta'\n}",
-        "ejercicio": "Construí un gestor de tareas completo: agregar tarea (con prioridad: alta/media/baja), listar todas, marcar como completada, filtrar por prioridad, eliminar completadas. Todo persiste en JSON.",
-        "pista": "Empezá con las funciones: cargar_tareas(), guardar_tareas(), agregar_tarea(), listar_tareas(). Después el menú principal con while True."
+        "descripcion": "Reutilizá y extendé clases con herencia", "xp": 150,
+        "teoria": "La herencia permite crear clases que reutilizan código de otras clases.\n\nClase hija hereda atributos y métodos de la clase padre.\nSintaxis: class Hija(Padre):\n\nsuper(): llama al constructor o método del padre.\n\nPolimorfismo: diferentes clases pueden responder al mismo método de formas distintas.\n\nTipos de métodos:\n• Públicos: nombre_normal\n• Protegidos (convención): _nombre\n• Privados (name mangling): __nombre\n\nMétodos de clase y estáticos:\n• @classmethod — recibe cls, puede modificar la clase\n• @staticmethod — no recibe self ni cls\n\nHerencia múltiple: class C(A, B) — Python usa MRO (Method Resolution Order) para resolver conflictos.",
+        "ejemplo": 'class Animal:\n    def __init__(self, nombre, edad):\n        self.nombre = nombre\n        self.edad = edad\n    \n    def hablar(self):\n        return "..."\n    \n    def __str__(self):\n        return f"{self.__class__.__name__}: {self.nombre}"\n\nclass Perro(Animal):\n    def __init__(self, nombre, edad, raza):\n        super().__init__(nombre, edad)\n        self.raza = raza\n    \n    def hablar(self):\n        return "¡Guau!"\n    \n    def buscar(self, objeto):\n        return f"{self.nombre} busca el {objeto}"\n\nclass Gato(Animal):\n    def hablar(self):\n        return "¡Miau!"\n\nanimales = [Perro("Rex", 3, "Labrador"), Gato("Michi", 5)]\n\nfor animal in animales:\n    print(f"{animal}: {animal.hablar()}")  # polimorfismo\n\n# isinstance y issubclass\nprint(isinstance(animales[0], Animal))  # True\nprint(issubclass(Perro, Animal))  # True',
+        "ejercicio": "Creá una jerarquía de figuras geométricas:\n• Clase base Figura con: color, abstracto area() y perimetro()\n• Circulo(Figura) con radio, implementa area y perimetro\n• Triangulo(Figura) con tres lados, implementa area (Herón) y perimetro\n• Creá una lista con instancias y usá polimorfismo para mostrar área de cada una",
+        "pista": "import math — area circulo: math.pi * radio**2 — formula de Herón: s=(a+b+c)/2; area=math.sqrt(s*(s-a)*(s-b)*(s-c))"
     },
     {
-        "id": 23, "bloque": "Casos reales", "titulo": "Caso real: Analizador de datos",
-        "descripcion": "Procesá datos reales como un analista — sin pandas",
-        "xp": 150,
-        "teoria": "Antes de usar pandas, es importante entender cómo procesar datos con Python puro. Esto te da base para entender qué hace pandas por debajo.",
-        "ejemplo": "ventas = [\n    {'mes': 'Enero', 'total': 45000, 'region': 'Norte'},\n    {'mes': 'Febrero', 'total': 52000, 'region': 'Sur'},\n]\n\n# Estadísticas\ntotales = [v['total'] for v in ventas]\npromedio = sum(totales) / len(totales)\nmejor = max(ventas, key=lambda v: v['total'])",
-        "ejercicio": "Analizá estos datos de ventas mensuales que te damos. Calculá: total anual, promedio mensual, mejor y peor mes, comparación norte vs sur, y un gráfico de barras ASCII.",
-        "pista": "Para el gráfico ASCII: calculá el porcentaje de cada mes respecto al máximo. Multiplicá por 30 para tener la longitud de la barra. Usá '█' * longitud."
+        "id": 22, "bloque": "Casos reales", "titulo": "Gestor de tareas CLI",
+        "descripcion": "Construí una app de tareas completa", "xp": 200,
+        "teoria": "Vas a construir un gestor de tareas funcional que integra todo lo que aprendiste: clases, archivos JSON, manejo de errores y lógica de negocio.\n\nEl sistema tendrá:\n• Clase Tarea con id, titulo, descripcion, completada, fecha_creacion\n• Clase GestorTareas que persiste en JSON\n• Operaciones CRUD: crear, listar, completar, eliminar\n• Filtros: todas, pendientes, completadas\n• IDs únicos generados automáticamente\n\nEste es el patrón Repository: una clase que gestiona la persistencia de los datos, separando la lógica del acceso a datos.",
+        "ejemplo": 'import json\nfrom datetime import datetime\n\nclass Tarea:\n    def __init__(self, id, titulo, descripcion="", completada=False):\n        self.id = id\n        self.titulo = titulo\n        self.descripcion = descripcion\n        self.completada = completada\n        self.fecha = datetime.now().strftime("%Y-%m-%d %H:%M")\n    \n    def to_dict(self):\n        return vars(self)\n    \n    def __str__(self):\n        estado = "✓" if self.completada else "○"\n        return f"[{estado}] #{self.id}: {self.titulo}"\n\nclass GestorTareas:\n    def __init__(self, archivo="tareas.json"):\n        self.archivo = archivo\n        self.tareas = self._cargar()\n    \n    def _cargar(self):\n        try:\n            with open(self.archivo) as f:\n                datos = json.load(f)\n                return [Tarea(**d) for d in datos]\n        except FileNotFoundError:\n            return []\n    \n    def _guardar(self):\n        with open(self.archivo, "w") as f:\n            json.dump([t.to_dict() for t in self.tareas], f, indent=2)\n    \n    def agregar(self, titulo, descripcion=""):\n        nuevo_id = max((t.id for t in self.tareas), default=0) + 1\n        tarea = Tarea(nuevo_id, titulo, descripcion)\n        self.tareas.append(tarea)\n        self._guardar()\n        return tarea\n    \n    def completar(self, id):\n        for t in self.tareas:\n            if t.id == id:\n                t.completada = True\n                self._guardar()\n                return True\n        return False\n    \n    def listar(self, filtro="todas"):\n        if filtro == "pendientes":\n            return [t for t in self.tareas if not t.completada]\n        if filtro == "completadas":\n            return [t for t in self.tareas if t.completada]\n        return self.tareas\n\ng = GestorTareas()\ng.agregar("Aprender Python", "Completar el curso CodeTutor")\ng.agregar("Hacer ejercicio")\ng.completar(1)\nfor t in g.listar():\n    print(t)',
+        "ejercicio": "Extendé el GestorTareas agregando:\n1. Método eliminar(id) que borra la tarea\n2. Método buscar(texto) que filtra tareas por texto en título o descripción\n3. Método estadisticas() que devuelve dict con total, completadas, pendientes, porcentaje\n4. Probá todas las operaciones en orden",
+        "pista": "eliminar: self.tareas = [t for t in self.tareas if t.id != id] — buscar: return [t for t in self.tareas if texto.lower() in t.titulo.lower()]"
     },
     {
-        "id": 24, "bloque": "Casos reales", "titulo": "Caso real: API con FastAPI",
-        "descripcion": "Tu primer backend real — endpoints, validación, base de datos",
-        "xp": 200,
-        "teoria": "FastAPI es el framework más moderno para hacer APIs en Python. Con muy poco código tenés una API con documentación automática, validación de datos y manejo de errores.",
-        "ejemplo": "from fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass Tarea(BaseModel):\n    titulo: str\n    completada: bool = False\n\ntareas = []\n\n@app.get('/tareas')\ndef listar():\n    return tareas\n\n@app.post('/tareas')\ndef crear(tarea: Tarea):\n    tareas.append(tarea)\n    return tarea",
-        "ejercicio": "Construí una API REST para la agenda de contactos: GET /contactos (listar todos), POST /contactos (crear), GET /contactos/{nombre} (buscar), DELETE /contactos/{nombre} (eliminar). Usá una lista en memoria.",
-        "pista": "Creá una clase Contacto con BaseModel. Usá una lista global contactos = []. Para buscar: next((c for c in contactos if c.nombre == nombre), None)."
+        "id": 23, "bloque": "Casos reales", "titulo": "Analizador de datos",
+        "descripcion": "Procesá y analizá datos del mundo real", "xp": 200,
+        "teoria": "El análisis de datos sin librerías externas es una habilidad valiosa. Usarás Python puro para:\n• Leer datos de CSV (comma-separated values)\n• Limpiar y normalizar datos\n• Calcular estadísticas: media, mediana, moda, desviación estándar\n• Agrupar y filtrar datos\n• Generar reportes\n\nEl módulo csv de la biblioteca estándar hace que leer CSVs sea sencillo.\nEl módulo statistics tiene funciones estadísticas básicas.\ncollections.Counter es ideal para contar frecuencias.\ncollections.defaultdict simplifica agrupaciones.",
+        "ejemplo": 'import csv\nimport statistics\nfrom collections import Counter, defaultdict\n\n# Crear datos de ejemplo\nventas_data = [\n    ["producto", "categoria", "precio", "cantidad"],\n    ["Laptop", "Tech", "1200", "3"],\n    ["Mouse", "Tech", "25", "15"],\n    ["Silla", "Muebles", "300", "5"],\n    ["Monitor", "Tech", "400", "8"],\n    ["Escritorio", "Muebles", "500", "2"],\n]\n\nwith open("ventas.csv", "w", newline="") as f:\n    writer = csv.writer(f)\n    writer.writerows(ventas_data)\n\n# Analizar\nventas = []\nwith open("ventas.csv") as f:\n    reader = csv.DictReader(f)\n    for row in reader:\n        row["precio"] = float(row["precio"])\n        row["cantidad"] = int(row["cantidad"])\n        row["total"] = row["precio"] * row["cantidad"]\n        ventas.append(row)\n\ntotales = [v["total"] for v in ventas]\nprint(f"Total ventas: ${sum(totales):,.2f}")\nprint(f"Promedio: ${statistics.mean(totales):.2f}")\nprint(f"Mediana: ${statistics.median(totales):.2f}")\n\n# Agrupar por categoría\npor_categoria = defaultdict(float)\nfor v in ventas:\n    por_categoria[v["categoria"]] += v["total"]\n\nfor cat, total in por_categoria.items():\n    print(f"{cat}: ${total:,.2f}")',
+        "ejercicio": "Creá un analizador de calificaciones:\n1. Generá datos CSV con: estudiante, materia, nota (float 0-100)\n2. Calculá promedio, mínimo, máximo, y desviación estándar por estudiante\n3. Encontrá qué materia tiene el mejor y peor promedio\n4. Contá cuántos estudiantes aprobaron (nota >= 60)",
+        "pista": "Usá defaultdict(list) para agrupar notas por estudiante: notas_por_estudiante[row['estudiante']].append(float(row['nota']))"
     },
     {
-        "id": 25, "bloque": "Casos reales", "titulo": "Caso real: Estructuras de datos",
-        "descripcion": "Stack, Queue y LRU Cache — lo que se pregunta en entrevistas",
-        "xp": 200,
-        "teoria": "Stack (LIFO) y Queue (FIFO) son las estructuras de datos más básicas. Un LRU Cache combina un diccionario (O(1) búsqueda) con una cola ordenada para saber cuál elemento usar menos recientemente.",
-        "ejemplo": "# Stack — historial del navegador\nhistorial = []\nhistorial.append('google.com')    # push\nhistorial.append('youtube.com')\nhistorial.pop()  # vuelve a google.com\n\n# Queue — cola de tickets\nfrom collections import deque\ntickets = deque()\ntickets.append('ticket-1')  # enqueue\ntickets.popleft()           # dequeue",
-        "ejercicio": "Implementá desde cero: (1) un Stack con push, pop y peek, (2) una Queue con enqueue y dequeue, (3) un sistema de historial del navegador que soporte ir atrás y adelante (necesitás DOS stacks).",
-        "pista": "Para el historial con adelante/atrás necesitás: stack_atras y stack_adelante. Cuando navegás: push al stack_atras, limpiar adelante. Cuando vas atrás: pop de atras, push a adelante."
+        "id": 24, "bloque": "Casos reales", "titulo": "Mini API con FastAPI",
+        "descripcion": "Construí una API REST completa", "xp": 200,
+        "teoria": "FastAPI es el framework que estás usando ahora mismo en CodeTutor. Es moderno, rápido y fácil de aprender.\n\nConceptos clave:\n• Router: agrupa endpoints relacionados\n• Path parameters: /items/{item_id}\n• Query parameters: /items?skip=0&limit=10\n• Request body: Pydantic models validan automáticamente\n• Response model: define la forma del response\n• Status codes: 200 OK, 201 Created, 404 Not Found, etc.\n• CRUD: Create, Read, Update, Delete\n• HTTPException: devuelve errores HTTP\n\nPydantic valida tipos automáticamente: si esperás int y recibís string, da error 422.",
+        "ejemplo": '# Ejecutá esto como: uvicorn main:app --reload\nfrom fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\nfrom typing import Optional\nimport json, os\n\napp = FastAPI(title="Mini API", version="1.0")\n\nclass Producto(BaseModel):\n    nombre: str\n    precio: float\n    stock: int = 0\n    descripcion: Optional[str] = None\n\nproductos = {}\ncontador = 0\n\n@app.get("/productos")\ndef listar_productos():\n    return list(productos.values())\n\n@app.post("/productos", status_code=201)\ndef crear_producto(producto: Producto):\n    global contador\n    contador += 1\n    productos[contador] = {"id": contador, **producto.dict()}\n    return productos[contador]\n\n@app.get("/productos/{id}")\ndef obtener_producto(id: int):\n    if id not in productos:\n        raise HTTPException(status_code=404, detail="Producto no encontrado")\n    return productos[id]\n\n@app.put("/productos/{id}")\ndef actualizar_producto(id: int, producto: Producto):\n    if id not in productos:\n        raise HTTPException(status_code=404, detail="No encontrado")\n    productos[id] = {"id": id, **producto.dict()}\n    return productos[id]\n\n@app.delete("/productos/{id}")\ndef eliminar_producto(id: int):\n    if id not in productos:\n        raise HTTPException(status_code=404, detail="No encontrado")\n    del productos[id]\n    return {"mensaje": "Eliminado"}\n\n# Documentación automática en http://localhost:8000/docs',
+        "ejercicio": "Modificá la API de productos para que:\n1. Persista los datos en un archivo productos.json en lugar de memoria\n2. Agregue un endpoint GET /productos?categoria=X para filtrar\n3. Agregue un endpoint GET /productos/estadisticas que devuelva: total, precio_promedio, sin_stock\n4. Validá que el precio sea > 0 usando Pydantic validators",
+        "pista": "@app.validator('precio') def precio_positivo(cls, v): if v <= 0: raise ValueError('El precio debe ser positivo'); return v"
     },
+    {
+        "id": 25, "bloque": "Casos reales", "titulo": "Estructuras de datos avanzadas",
+        "descripcion": "Implementá Stack, Queue y LRU Cache", "xp": 200,
+        "teoria": "Las estructuras de datos son fundamentales en programación. En este módulo implementarás tres clásicas:\n\nStack (Pila): LIFO — el último en entrar es el primero en salir.\n• push: agregar al tope\n• pop: sacar del tope\n• peek: ver el tope sin sacar\n• Uso: deshacer/rehacer, validar paréntesis, DFS\n\nQueue (Cola): FIFO — el primero en entrar es el primero en salir.\n• enqueue: agregar al final\n• dequeue: sacar del inicio\n• Uso: BFS, procesamiento de tareas, buffers\n\nLRU Cache: caché con política Least Recently Used.\n• Cuando está llena, descarta el elemento menos recientemente usado\n• Implementación clásica: dict + deque (o OrderedDict)",
+        "ejemplo": 'from collections import deque, OrderedDict\n\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item): self._items.append(item)\n    def pop(self): return self._items.pop() if self._items else None\n    def peek(self): return self._items[-1] if self._items else None\n    def is_empty(self): return len(self._items) == 0\n    def __len__(self): return len(self._items)\n\nclass Queue:\n    def __init__(self):\n        self._items = deque()\n    def enqueue(self, item): self._items.append(item)\n    def dequeue(self): return self._items.popleft() if self._items else None\n    def is_empty(self): return len(self._items) == 0\n    def __len__(self): return len(self._items)\n\nclass LRUCache:\n    def __init__(self, capacidad):\n        self.capacidad = capacidad\n        self.cache = OrderedDict()\n    \n    def get(self, key):\n        if key not in self.cache:\n            return -1\n        self.cache.move_to_end(key)\n        return self.cache[key]\n    \n    def put(self, key, value):\n        if key in self.cache:\n            self.cache.move_to_end(key)\n        self.cache[key] = value\n        if len(self.cache) > self.capacidad:\n            self.cache.popitem(last=False)\n\n# Uso\ns = Stack()\nfor i in [1, 2, 3]: s.push(i)\nprint(s.pop(), s.pop())  # 3 2\n\nlru = LRUCache(3)\nlru.put("a", 1); lru.put("b", 2); lru.put("c", 3)\nprint(lru.get("a"))  # 1 (mueve a al final)\nlru.put("d", 4)       # elimina "b" (LRU)\nprint(lru.get("b"))  # -1',
+        "ejercicio": "Implementá un validador de paréntesis usando Stack:\n1. Función valida_parentesis(texto) que retorna True si () [] {} están correctamente anidados\n2. Probá con: \"({[]})\", \"([)]\", \"{{}}\", \"abc(def[ghi])\"\n\nLuego implementá BFS (Breadth-First Search) usando Queue en un grafo de ciudades representado como dict.",
+        "pista": "Para paréntesis: usa un Stack. Abre → push. Cierra → pop y verificá que coincida. Al final el stack debe estar vacío. pares = {')':'(', ']':'[', '}':'{'}"
+    }
 ]
 
-@router.get("/modulos")
-def obtener_modulos():
-    return modulos
 
-@router.get("/modulos/{modulo_id}")
-def obtener_modulo(modulo_id: int):
-    modulo = next((m for m in modulos if m["id"] == modulo_id), None)
-    if not modulo:
-        return {"error": "Módulo no encontrado"}
-    return modulo
-
-@router.get("/bloques")
-def obtener_bloques():
-    bloques = {}
-    for m in modulos:
-        b = m["bloque"]
-        if b not in bloques:
-            bloques[b] = []
-        bloques[b].append({"id": m["id"], "titulo": m["titulo"], "xp": m["xp"]})
-    return bloques
+@router.get("/modulos/python")
+def get_modulos_python():
+    return MODULOS_PYTHON

@@ -1,275 +1,649 @@
-const API = "http://127.0.0.1:8000";
-let moduloActivo = null;
+'use strict';
 
-async function iniciar() {
-    await verificarIA();
-    await renderizarBloques();
-}
+/* ═══════════════════════════════════ ESTADO GLOBAL ═══════════════════════════════════ */
+const estado = {
+  lenguaje: null,
+  modulos: [],
+  progreso: { python: [], javascript: [], cpp: [], xp: 0, nivel: 1, nivel_info: {} },
+  moduloActual: null,
+  iaConfigurada: false,
+  iaOcupada: false,
+  corriendo: false,
+};
 
-// ══════════════════════════════════════════
-// PROGRESO
-// ══════════════════════════════════════════
+const LANG_META = {
+  python:     { icon: '🐍', nombre: 'Python',     total: 25, placeholder: '# Escribí tu código Python acá...' },
+  javascript: { icon: '🟨', nombre: 'JavaScript', total: 10, placeholder: '// Escribí tu código JS acá...' },
+  cpp:        { icon: '⚙️', nombre: 'C++',         total: 10, placeholder: '// Escribí tu código C++ acá...' },
+};
+
+/* ═══════════════════════════════════ INICIALIZACIÓN ══════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', async () => {
+  await cargarProgreso();
+  await verificarIA();
+  configurarEditor();
+});
+
 async function cargarProgreso() {
-    try {
-        const res = await fetch(`${API}/progreso`);
-        return await res.json();
-    } catch { return { xp: 0, nivel: 1, modulos_completados: [] }; }
+  try {
+    const data = await api('/api/progreso');
+    estado.progreso = data;
+    actualizarUIProgreso();
+  } catch (e) {
+    console.warn('No se pudo cargar el progreso:', e);
+  }
 }
 
-function actualizarStats(usuario) {
-    document.getElementById("xp").textContent = usuario.xp;
-    document.getElementById("nivel").textContent = usuario.nivel;
-    const n = usuario.modulos_completados.length;
-    document.getElementById("completados").textContent = n;
-    const pct = Math.round((n / 25) * 100);
-    document.getElementById("barra-progreso").style.width = pct + "%";
-    document.getElementById("progreso-texto").textContent = `${n} de 25 módulos (${pct}%)`;
+function actualizarUIProgreso() {
+  const p = estado.progreso;
+  const nivel = p.nivel_info || {};
+
+  // Pantalla inicio
+  setText('nivel-titulo-inicio', nivel.titulo || 'Principiante');
+  setText('xp-badge-inicio', `${p.xp || 0} XP`);
+
+  // Barras de progreso por lenguaje en inicio
+  for (const lang of ['python', 'javascript', 'cpp']) {
+    const completados = (p[lang] || []).length;
+    const total = LANG_META[lang].total;
+    const pct = total > 0 ? (completados / total) * 100 : 0;
+    setStyle('prog-' + lang, 'width', pct + '%');
+    setText('prog-' + lang + '-texto', `${completados} / ${total} módulos`);
+  }
 }
 
-// ══════════════════════════════════════════
-// RENDERIZAR BLOQUES Y MÓDULOS
-// ══════════════════════════════════════════
-async function renderizarBloques() {
-    const [modulos, progreso] = await Promise.all([
-        fetch(`${API}/python/modulos`).then(r => r.json()).catch(() => []),
-        cargarProgreso()
-    ]);
+/* ═══════════════════════════════════ NAVEGACIÓN ══════════════════════════════════════ */
+function mostrarPantalla(id) {
+  document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('activa');
+  window.scrollTo(0, 0);
+}
 
-    if (!modulos.length) {
-        document.getElementById("bloques-contenedor").innerHTML =
-            "<p style='color:#f87171;padding:20px'>⚠ No se puede conectar al servidor. Asegurate de tener uvicorn corriendo.</p>";
-        return;
+async function seleccionarLenguaje(lang) {
+  estado.lenguaje = lang;
+  const meta = LANG_META[lang];
+
+  setText('modulos-lang-icon', meta.icon);
+  setText('modulos-lang-nombre', meta.nombre);
+
+  try {
+    estado.modulos = await api(`/api/modulos/${lang}`);
+  } catch (e) {
+    toast('Error cargando módulos. Revisá que el servidor esté corriendo.', 'error');
+    return;
+  }
+
+  renderizarModulos();
+  actualizarProgresoModulos();
+  mostrarPantalla('pantalla-modulos');
+}
+
+function irAInicio() {
+  mostrarPantalla('pantalla-inicio');
+}
+
+function irAModulos() {
+  mostrarPantalla('pantalla-modulos');
+  limpiarChatIA();
+}
+
+/* ═══════════════════════════════════ PANTALLA MÓDULOS ════════════════════════════════ */
+function renderizarModulos() {
+  const lista = document.getElementById('modulos-lista');
+  lista.innerHTML = '';
+
+  const completados = estado.progreso[estado.lenguaje] || [];
+  const bloques = agruparPorBloque(estado.modulos);
+
+  for (const [bloque, modulos] of Object.entries(bloques)) {
+    const seccion = document.createElement('div');
+    seccion.className = 'bloque-section';
+
+    const titulo = document.createElement('div');
+    titulo.className = 'bloque-titulo';
+    titulo.textContent = bloque;
+    seccion.appendChild(titulo);
+
+    for (const modulo of modulos) {
+      const estaCompletado = completados.includes(modulo.id);
+      const desbloqueado = esDesbloqueado(modulo.id, completados, estado.modulos);
+      const card = crearCardModulo(modulo, estaCompletado, desbloqueado);
+      seccion.appendChild(card);
     }
 
-    actualizarStats(progreso);
-    const completados = progreso.modulos_completados || [];
-
-    // Agrupar por bloque
-    const bloques = {};
-    modulos.forEach(m => {
-        if (!bloques[m.bloque]) bloques[m.bloque] = [];
-        bloques[m.bloque].push(m);
-    });
-
-    const iconos = {
-        "Fundamentos": "🧱", "Strings": "📝", "Decisiones": "🔀",
-        "Loops": "🔁", "Estructuras de datos": "📦",
-        "Funciones": "⚙️", "Archivos y errores": "💾",
-        "OOP": "🏗️", "Casos reales": "🚀"
-    };
-
-    const contenedor = document.getElementById("bloques-contenedor");
-    contenedor.innerHTML = "";
-
-    Object.entries(bloques).forEach(([nombre, mods]) => {
-        const totalBloque = mods.length;
-        const hechos = mods.filter(m => completados.includes(m.id)).length;
-        const bloqueCompleto = hechos === totalBloque;
-
-        const seccion = document.createElement("div");
-        seccion.className = "bloque-seccion";
-        seccion.innerHTML = `
-            <div class="bloque-header">
-                <span class="bloque-icon">${iconos[nombre] || "📌"}</span>
-                <span class="bloque-nombre">${nombre}</span>
-                <span class="bloque-progreso">${hechos}/${totalBloque}</span>
-                ${bloqueCompleto ? '<span class="bloque-badge">✓ Completado</span>' : ''}
-            </div>
-            <div class="modulos-grid" id="grid-${nombre.replace(/ /g,'_')}"></div>
-        `;
-        contenedor.appendChild(seccion);
-
-        const grid = document.getElementById(`grid-${nombre.replace(/ /g,'_')}`);
-        mods.forEach((m, idx) => {
-            const estaCompleto = completados.includes(m.id);
-            const anterior = m.id === 1 || completados.includes(m.id - 1);
-            const bloqueado = !anterior && !estaCompleto;
-
-            const card = document.createElement("div");
-            card.className = "modulo-card" +
-                (estaCompleto ? " completado" : "") +
-                (bloqueado ? " bloqueado" : "");
-
-            card.innerHTML = `
-                <div class="modulo-num">${m.id}</div>
-                <div class="modulo-info">
-                    <div class="modulo-titulo">${m.titulo}</div>
-                    <div class="modulo-desc">${m.descripcion}</div>
-                </div>
-                <div class="modulo-xp">${estaCompleto ? '✓' : '+' + m.xp + ' XP'}</div>
-            `;
-
-            if (!bloqueado) {
-                card.style.cursor = "pointer";
-                card.onclick = () => abrirModulo(m.id);
-            }
-
-            grid.appendChild(card);
-        });
-    });
+    lista.appendChild(seccion);
+  }
 }
 
-// ══════════════════════════════════════════
-// MODAL
-// ══════════════════════════════════════════
-async function abrirModulo(id) {
-    moduloActivo = id;
-    try {
-        const [modulo, progreso] = await Promise.all([
-            fetch(`${API}/python/modulos/${id}`).then(r => r.json()),
-            cargarProgreso()
-        ]);
-        const estaCompleto = progreso.modulos_completados.includes(id);
-
-        document.getElementById("modal-contenido").innerHTML = `
-            <div class="modal-bloque">${modulo.bloque}</div>
-            <div class="modal-titulo">${modulo.id}. ${modulo.titulo}</div>
-            <div class="modal-xp">+${modulo.xp} XP</div>
-
-            <div class="modal-seccion">
-                <div class="modal-label">📖 Concepto</div>
-                <div class="modal-teoria">${modulo.teoria}</div>
-            </div>
-
-            <div class="modal-seccion">
-                <div class="modal-label">💻 Ejemplo</div>
-                <pre class="modal-codigo">${modulo.ejemplo}</pre>
-            </div>
-
-            <div class="modal-seccion">
-                <div class="modal-label">💪 Tu ejercicio</div>
-                <div class="modal-ejercicio">${modulo.ejercicio}</div>
-            </div>
-
-            <div class="modal-pista" id="pista-box" style="display:none">
-                <div class="modal-label">💡 Pista</div>
-                <div style="color:#c0a060;font-size:13px;line-height:1.6">${modulo.pista}</div>
-            </div>
-
-            <div class="modal-acciones">
-                <button onclick="togglePista()">💡 Ver pista</button>
-                <button class="btn-ayuda" onclick="pedirAyuda(${modulo.id}, '${modulo.titulo}'); cerrarModal()">⚡ Preguntar al tutor</button>
-                ${!estaCompleto
-                    ? `<button class="btn-completar" onclick="completar(${modulo.id})">✓ Marcar como completado</button>`
-                    : `<div class="badge-completado">✓ Ya completaste este módulo</div>`
-                }
-            </div>
-        `;
-        document.getElementById("modal-overlay").classList.add("visible");
-    } catch { mostrarToast("No se pudo cargar el módulo", "error"); }
+function agruparPorBloque(modulos) {
+  const grupos = {};
+  for (const m of modulos) {
+    if (!grupos[m.bloque]) grupos[m.bloque] = [];
+    grupos[m.bloque].push(m);
+  }
+  return grupos;
 }
 
-function cerrarModal() {
-    document.getElementById("modal-overlay").classList.remove("visible");
+function esDesbloqueado(id, completados, modulos) {
+  const idx = modulos.findIndex(m => m.id === id);
+  if (idx === 0) return true;
+  const anterior = modulos[idx - 1];
+  return completados.includes(anterior.id);
+}
+
+function crearCardModulo(modulo, completado, desbloqueado) {
+  const card = document.createElement('div');
+  card.className = 'modulo-card' +
+    (completado ? ' completado' : '') +
+    (!desbloqueado ? ' bloqueado' : '');
+
+  const numEl = document.createElement('div');
+  numEl.className = 'modulo-num';
+  numEl.textContent = completado ? '✓' : modulo.id;
+
+  const info = document.createElement('div');
+  info.className = 'modulo-info';
+
+  const titulo = document.createElement('div');
+  titulo.className = 'modulo-titulo';
+  titulo.textContent = modulo.titulo;
+
+  const desc = document.createElement('div');
+  desc.className = 'modulo-desc';
+  desc.textContent = modulo.descripcion;
+
+  info.appendChild(titulo);
+  info.appendChild(desc);
+
+  const xpBadge = document.createElement('div');
+  xpBadge.className = 'modulo-xp-badge';
+  xpBadge.textContent = completado ? '✓ Completado' : `+${modulo.xp} XP`;
+
+  card.appendChild(numEl);
+  card.appendChild(info);
+  card.appendChild(xpBadge);
+
+  if (!desbloqueado) {
+    const lock = document.createElement('div');
+    lock.className = 'modulo-lock';
+    lock.textContent = '🔒';
+    card.appendChild(lock);
+  }
+
+  if (desbloqueado) {
+    card.onclick = () => abrirModal(modulo, completado);
+  }
+
+  return card;
+}
+
+function actualizarProgresoModulos() {
+  const completados = (estado.progreso[estado.lenguaje] || []).length;
+  const total = estado.modulos.length;
+  const pct = total > 0 ? (completados / total) * 100 : 0;
+  const xpGanado = calcularXPGanado();
+  const nivel = estado.progreso.nivel_info || {};
+
+  setText('mod-completados', completados);
+  setText('mod-total', total);
+  setText('mod-xp-ganado', xpGanado);
+  setStyle('modulos-barra-fill', 'width', pct + '%');
+
+  setText('modulos-nivel-titulo', nivel.titulo || 'Principiante');
+  setText('modulos-xp-valor', `${estado.progreso.xp || 0} XP`);
+  setStyle('modulos-xp-fill', 'width', (nivel.progreso_pct || 0) + '%');
+}
+
+function calcularXPGanado() {
+  if (!estado.lenguaje) return 0;
+  const completados = estado.progreso[estado.lenguaje] || [];
+  return completados.reduce((sum, id) => {
+    const mod = estado.modulos.find(m => m.id === id);
+    return sum + (mod ? mod.xp : 0);
+  }, 0);
+}
+
+/* ═══════════════════════════════════ MODAL ═══════════════════════════════════════════ */
+let moduloEnModal = null;
+
+function abrirModal(modulo, completado) {
+  moduloEnModal = modulo;
+
+  setText('modal-bloque', modulo.bloque);
+  setText('modal-xp', `+${modulo.xp} XP`);
+  setText('modal-titulo', modulo.titulo);
+  setText('modal-desc', modulo.descripcion);
+  setText('modal-teoria-text', modulo.teoria);
+  setText('modal-codigo', modulo.ejemplo);
+  setText('modal-ejercicio-text', modulo.ejercicio);
+  setText('modal-pista-text', modulo.pista);
+
+  // Resetear tabs
+  switchTab('teoria', document.querySelector('.modal-tab'));
+
+  // Ocultar pista
+  hide('modal-pista-text');
+  setText('btn-pista-modal', '💡 Ver pista');
+
+  // Botón completar
+  const btnCompletar = document.getElementById('btn-modal-completar');
+  if (completado) {
+    btnCompletar.textContent = '✓ Ya completado';
+    btnCompletar.classList.add('ya-completado');
+  } else {
+    btnCompletar.textContent = '✓ Marcar completado';
+    btnCompletar.classList.remove('ya-completado');
+  }
+
+  // Si ya está completado, agregar botón repetir
+  const footer = document.querySelector('.modal-footer');
+  const existeRepetir = footer.querySelector('.btn-repetir');
+  if (existeRepetir) existeRepetir.remove();
+
+  if (completado) {
+    const btnRepetir = document.createElement('button');
+    btnRepetir.className = 'btn-modal-practicar btn-repetir';
+    btnRepetir.style.background = 'var(--blue)';
+    btnRepetir.textContent = '🔁 Repetir';
+    btnRepetir.onclick = abrirEditor;
+    footer.insertBefore(btnRepetir, footer.firstChild);
+  }
+
+  show('modal-overlay');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  hide('modal-overlay');
+  document.body.style.overflow = '';
+  moduloEnModal = null;
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('activo'));
+  if (btn) btn.classList.add('activo');
+
+  hide('modal-teoria');
+  hide('modal-ejemplo');
+  hide('modal-ejercicio');
+  show('modal-' + tab);
+}
+
+function togglePistaModal() {
+  const pista = document.getElementById('modal-pista-text');
+  const btn = document.getElementById('btn-pista-modal');
+  if (pista.classList.contains('oculta')) {
+    show('modal-pista-text');
+    btn.textContent = '💡 Ocultar pista';
+  } else {
+    hide('modal-pista-text');
+    btn.textContent = '💡 Ver pista';
+  }
+}
+
+async function marcarCompletadoDesdeModal() {
+  if (!moduloEnModal) return;
+  const btn = document.getElementById('btn-modal-completar');
+  if (btn.classList.contains('ya-completado')) return;
+  await marcarModuloCompletado(moduloEnModal.id);
+}
+
+/* ═══════════════════════════════════ EDITOR ══════════════════════════════════════════ */
+function configurarEditor() {
+  const editor = document.getElementById('code-editor');
+
+  editor.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      editor.value = editor.value.substring(0, start) + '    ' + editor.value.substring(end);
+      editor.selectionStart = editor.selectionEnd = start + 4;
+    }
+  });
+}
+
+function abrirEditor() {
+  const modulo = moduloEnModal;
+  if (!modulo) return;
+
+  estado.moduloActual = modulo;
+  const completado = (estado.progreso[estado.lenguaje] || []).includes(modulo.id);
+  const meta = LANG_META[estado.lenguaje];
+
+  // Actualizar header
+  setText('editor-modulo-numero', `#${modulo.id}`);
+  setText('editor-modulo-titulo', modulo.titulo);
+
+  // Columna izquierda
+  setText('editor-teoria', modulo.teoria);
+  setText('editor-ejercicio', modulo.ejercicio);
+  setText('editor-pista', modulo.pista);
+  hide('editor-pista');
+  setText('btn-pista', '💡 Mostrar pista');
+
+  // Badge de lenguaje
+  setText('code-lang-badge', meta.nombre);
+  document.getElementById('code-editor').placeholder = meta.placeholder;
+
+  // Botón completar
+  const btnCompletar = document.getElementById('btn-completar-editor');
+  if (completado) {
+    btnCompletar.textContent = '✓ Completado';
+    btnCompletar.classList.add('ya-completado');
+  } else {
+    btnCompletar.textContent = '✓ Marcar completado';
+    btnCompletar.classList.remove('ya-completado');
+  }
+
+  // Limpiar output
+  const outputPre = document.getElementById('output-pre');
+  outputPre.textContent = 'El output aparecerá aquí...';
+  outputPre.className = 'output-pre';
+  setText('output-status', '');
+  setText('run-tiempo', '');
+
+  cerrarModal();
+  mostrarPantalla('pantalla-editor');
 }
 
 function togglePista() {
-    const pista = document.getElementById("pista-box");
-    const visible = pista.style.display !== "none";
-    pista.style.display = visible ? "none" : "block";
-    event.target.textContent = visible ? "💡 Ver pista" : "🙈 Ocultar pista";
+  const pista = document.getElementById('editor-pista');
+  const btn = document.getElementById('btn-pista');
+  if (pista.classList.contains('oculta')) {
+    show('editor-pista');
+    btn.textContent = '💡 Ocultar pista';
+  } else {
+    hide('editor-pista');
+    btn.textContent = '💡 Mostrar pista';
+  }
 }
 
-async function completar(id) {
-    try {
-        const res = await fetch(`${API}/progreso/completar/${id}`, { method: "POST" });
-        const data = await res.json();
-        if (data.error) { mostrarToast(data.error, "error"); return; }
-        actualizarStats(data.usuario);
-        await renderizarBloques();
-        cerrarModal();
-        mostrarToast(`🎉 ¡Módulo completado! +${data.usuario.xp} XP total`, "exito");
-    } catch { mostrarToast("Error de conexión", "error"); }
+function limpiarEditor() {
+  document.getElementById('code-editor').value = '';
+  document.getElementById('code-editor').focus();
 }
 
-function mostrarToast(texto, tipo) {
-    const c = tipo === "exito"
-        ? { bg: "#34d39915", color: "#34d399", border: "#34d39930" }
-        : { bg: "#f8717115", color: "#f87171", border: "#f8717130" };
-    const el = document.createElement("div");
-    el.style.cssText = `position:fixed;bottom:24px;right:24px;background:${c.bg};color:${c.color};
-        border:1px solid ${c.border};padding:14px 20px;border-radius:12px;font-size:14px;
-        z-index:300;max-width:300px;line-height:1.5;`;
-    el.textContent = texto;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 4000);
+/* ═══════════════════════════════════ EJECUCIÓN DE CÓDIGO ════════════════════════════ */
+async function ejecutarCodigo() {
+  if (estado.corriendo) return;
+
+  const codigo = document.getElementById('code-editor').value.trim();
+  if (!codigo) {
+    toast('Escribí algo de código primero!', 'error');
+    return;
+  }
+
+  estado.corriendo = true;
+  const btnRun = document.getElementById('btn-run');
+  btnRun.disabled = true;
+  btnRun.textContent = '⟳ Corriendo...';
+  btnRun.classList.add('corriendo');
+
+  const outputPre = document.getElementById('output-pre');
+  const outputStatus = document.getElementById('output-status');
+  const runTiempo = document.getElementById('run-tiempo');
+
+  outputPre.textContent = 'Ejecutando...';
+  outputPre.className = 'output-pre';
+  outputStatus.textContent = '';
+  outputStatus.className = 'output-status';
+  runTiempo.textContent = '';
+
+  try {
+    const resultado = await api('/api/ejecutar', 'POST', {
+      lenguaje: estado.lenguaje,
+      codigo: codigo,
+    });
+
+    outputPre.textContent = resultado.output;
+    runTiempo.textContent = `${resultado.tiempo}s`;
+
+    if (resultado.exito) {
+      outputPre.className = 'output-pre ok';
+      outputStatus.textContent = '✓ OK';
+      outputStatus.className = 'output-status ok';
+    } else {
+      outputPre.className = 'output-pre error';
+      outputStatus.textContent = '✗ Error';
+      outputStatus.className = 'output-status error';
+    }
+
+    // Análisis automático de IA
+    if (estado.iaConfigurada && estado.moduloActual) {
+      await analizarConIA(codigo, resultado);
+    }
+
+  } catch (e) {
+    outputPre.textContent = 'Error conectando con el servidor. ¿Está corriendo el backend?';
+    outputPre.className = 'output-pre error';
+    outputStatus.textContent = '✗ Error';
+    outputStatus.className = 'output-status error';
+  } finally {
+    estado.corriendo = false;
+    btnRun.disabled = false;
+    btnRun.textContent = '▶ Correr';
+    btnRun.classList.remove('corriendo');
+  }
 }
 
-// ══════════════════════════════════════════
-// TUTOR IA
-// ══════════════════════════════════════════
+/* ═══════════════════════════════════ TUTOR IA ═══════════════════════════════════════ */
 async function verificarIA() {
-    const el = document.getElementById("ia-estado");
-    try {
-        const res = await fetch(`${API}/ia/estado`);
-        const data = await res.json();
-        el.textContent = data.configurada ? "✓ IA lista" : "⚠ Falta API key";
-        el.className = "ia-estado " + (data.configurada ? "ok" : "error");
-    } catch {
-        el.textContent = "✗ Sin conexión";
-        el.className = "ia-estado error";
+  try {
+    const data = await api('/ia/estado');
+    estado.iaConfigurada = data.configurada;
+    const badge = document.getElementById('ia-estado-badge');
+    if (badge) {
+      badge.textContent = data.configurada ? '● Activa' : '○ Sin config';
+      badge.className = 'ia-estado ' + (data.configurada ? 'activa' : 'inactiva');
     }
+  } catch (e) {
+    estado.iaConfigurada = false;
+  }
 }
 
-function pedirAyuda(id, titulo) {
-    moduloActivo = id;
-    document.getElementById("pregunta").value = `Estoy haciendo el módulo "${titulo}" y `;
-    document.getElementById("pregunta").focus();
-    document.querySelector(".ia").scrollIntoView({ behavior: "smooth" });
+async function analizarConIA(codigo, resultado) {
+  if (!estado.iaConfigurada || estado.iaOcupada) return;
+
+  const modulo = estado.moduloActual;
+  agregarMensajeIA('assistant', '...analizando tu código 🔍', true);
+
+  try {
+    const data = await api('/ia/analizar', 'POST', {
+      codigo,
+      output: resultado.output,
+      exito: resultado.exito,
+      modulo_titulo: modulo?.titulo,
+      modulo_ejercicio: modulo?.ejercicio,
+      lenguaje: estado.lenguaje,
+    });
+
+    reemplazarUltimoMensajeIA(data.respuesta);
+  } catch (e) {
+    reemplazarUltimoMensajeIA('(El tutor IA no pudo analizar en este momento)');
+  }
 }
 
-function agregarMsg(texto, tipo) {
-    const h = document.getElementById("chat-historial");
-    const d = document.createElement("div");
-    d.className = `msg ${tipo}`;
-    d.innerHTML = `<div class="msg-label">${tipo === "user" ? "Vos" : tipo === "ia" ? "Tutor IA" : "Error"}</div>
-                   <div class="msg-burbuja">${texto}</div>`;
-    h.appendChild(d);
-    h.scrollTop = h.scrollHeight;
-}
+async function enviarPreguntaIA() {
+  if (estado.iaOcupada) return;
 
-function mostrarTyping() {
-    const h = document.getElementById("chat-historial");
-    const t = document.createElement("div");
-    t.id = "typing"; t.className = "msg ia";
-    t.innerHTML = `<div class="msg-label">Tutor IA</div>
-                   <div class="typing"><span></span><span></span><span></span></div>`;
-    h.appendChild(t); h.scrollTop = h.scrollHeight;
-}
+  const input = document.getElementById('ia-input');
+  const mensaje = input.value.trim();
+  if (!mensaje) return;
 
-function quitarTyping() { document.getElementById("typing")?.remove(); }
+  input.value = '';
 
-async function preguntarIA() {
-    const input = document.getElementById("pregunta");
-    const msg = input.value.trim();
-    if (!msg) return;
-    const btn = document.getElementById("btn-preguntar");
-    btn.disabled = true;
-    input.value = "";
-    agregarMsg(msg, "user");
-    mostrarTyping();
-    try {
-        const res = await fetch(`${API}/ia/preguntar`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ mensaje: msg, modulo_id: moduloActivo })
-        });
-        const data = await res.json();
-        quitarTyping();
-        agregarMsg(data.respuesta || data.error, data.error ? "error" : "ia");
-    } catch {
-        quitarTyping();
-        agregarMsg("No se pudo conectar. ¿Está uvicorn corriendo?", "error");
-    } finally {
-        btn.disabled = false;
-        input.focus();
+  agregarMensajeIA('user', mensaje);
+  agregarMensajeIA('assistant', '...pensando 💭', true);
+
+  estado.iaOcupada = true;
+  document.getElementById('btn-ia-enviar').disabled = true;
+
+  try {
+    const data = await api('/ia/preguntar', 'POST', {
+      mensaje,
+      contexto_modulo: estado.moduloActual?.titulo,
+      lenguaje: estado.lenguaje,
+    });
+    reemplazarUltimoMensajeIA(data.respuesta);
+  } catch (e) {
+    if (e.message.includes('503') || e.message.includes('GEMINI')) {
+      reemplazarUltimoMensajeIA('El tutor IA no está configurado. Configurá la variable GEMINI_API_KEY para activarlo.');
+    } else {
+      reemplazarUltimoMensajeIA('Error conectando con el tutor IA. Intentá de nuevo.');
     }
+  } finally {
+    estado.iaOcupada = false;
+    document.getElementById('btn-ia-enviar').disabled = false;
+  }
 }
 
-async function limpiarConversacion() {
-    try { await fetch(`${API}/ia/historial`, { method: "DELETE" }); } catch {}
-    document.getElementById("chat-historial").innerHTML = "";
-    moduloActivo = null;
+function iaInputKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    enviarPreguntaIA();
+  }
 }
 
-iniciar();
+function agregarMensajeIA(role, texto, esCargando = false) {
+  const chat = document.getElementById('ia-chat');
+
+  const div = document.createElement('div');
+  div.className = 'ia-mensaje' + (role === 'user' ? ' usuario' : '') + (esCargando ? ' ia-cargando' : '');
+  if (esCargando) div.id = 'ia-cargando';
+
+  const avatar = document.createElement('span');
+  avatar.className = 'ia-avatar';
+  avatar.textContent = role === 'user' ? '🧑' : '🤖';
+
+  const burbuja = document.createElement('div');
+  burbuja.className = 'ia-burbuja';
+  burbuja.textContent = texto;
+
+  div.appendChild(avatar);
+  div.appendChild(burbuja);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function reemplazarUltimoMensajeIA(texto) {
+  const cargando = document.getElementById('ia-cargando');
+  if (cargando) {
+    cargando.id = '';
+    cargando.classList.remove('ia-cargando');
+    const burbuja = cargando.querySelector('.ia-burbuja');
+    if (burbuja) burbuja.textContent = texto;
+  } else {
+    agregarMensajeIA('assistant', texto);
+  }
+  const chat = document.getElementById('ia-chat');
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function limpiarChatIA() {
+  const chat = document.getElementById('ia-chat');
+  chat.innerHTML = '';
+  agregarMensajeIA('assistant', '¡Hola! Soy tu tutor IA. Corrí tu código y te voy a dar feedback automático. También podés preguntarme cualquier duda sobre el módulo.');
+  try {
+    await api('/ia/historial', 'DELETE');
+  } catch (e) { /* silencioso */ }
+}
+
+/* ═══════════════════════════════════ PROGRESO ════════════════════════════════════════ */
+async function marcarCompletado() {
+  if (!estado.moduloActual) return;
+  await marcarModuloCompletado(estado.moduloActual.id);
+}
+
+async function marcarModuloCompletado(moduloId) {
+  try {
+    const data = await api('/api/progreso/completar', 'POST', {
+      lenguaje: estado.lenguaje,
+      modulo_id: moduloId,
+    });
+
+    if (data.ya_estaba) {
+      toast('Ya tenías este módulo completado ✓', 'ok');
+      return;
+    }
+
+    estado.progreso = {
+      ...estado.progreso,
+      [estado.lenguaje]: data.completados,
+      xp: data.xp_total,
+      nivel: data.nivel_info.nivel,
+      nivel_info: data.nivel_info,
+    };
+
+    actualizarUIProgreso();
+    actualizarProgresoModulos();
+    renderizarModulos();
+
+    // Actualizar botón en editor
+    const btnEditor = document.getElementById('btn-completar-editor');
+    btnEditor.textContent = '✓ Completado';
+    btnEditor.classList.add('ya-completado');
+
+    // Mostrar celebración
+    const msg = data.nivel_info.nivel > (estado.progreso.nivel || 1)
+      ? `🎉 ¡Subiste al nivel ${data.nivel_info.nivel} — ${data.nivel_info.titulo}!`
+      : `⭐ +${data.xp_ganado} XP ganados! Total: ${data.xp_total} XP`;
+    toast(msg, 'xp');
+
+    // Cerrar modal si está abierto
+    hide('modal-overlay');
+    document.body.style.overflow = '';
+    moduloEnModal = null;
+
+  } catch (e) {
+    toast('Error guardando el progreso', 'error');
+  }
+}
+
+/* ═══════════════════════════════════ UTILIDADES ══════════════════════════════════════ */
+async function api(url, method = 'GET', body = null) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (body) opts.body = JSON.stringify(body);
+
+  const resp = await fetch(url, opts);
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+    throw new Error(`${resp.status}: ${err.detail || resp.statusText}`);
+  }
+  return resp.json();
+}
+
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+function setStyle(id, prop, value) {
+  const el = document.getElementById(id);
+  if (el) el.style[prop] = value;
+}
+
+function show(id) {
+  const el = typeof id === 'string' ? document.getElementById(id) : id;
+  if (el) el.classList.remove('oculta');
+}
+
+function hide(id) {
+  const el = typeof id === 'string' ? document.getElementById(id) : id;
+  if (el) el.classList.add('oculta');
+}
+
+let toastTimer = null;
+function toast(msg, tipo = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (tipo ? ' ' + tipo : '');
+  el.classList.remove('oculta');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add('oculta'), 3500);
+}
