@@ -1,7 +1,9 @@
 {
-  "python": [],
+  "python": [
+    1
+  ],
   "javascript": [],
   "cpp": [],
-  "xp": 0,
+  "xp": 50,
   "nivel": 1
 }
