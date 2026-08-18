@@ -17,9 +17,13 @@
       <span class="logo-icon">⚡</span>
       <span class="logo-text">CodeTutor</span>
     </div>
-    <div class="nivel-badge" id="nivel-badge-inicio">
-      <span id="nivel-titulo-inicio">Principiante</span>
-      <span class="xp-badge" id="xp-badge-inicio">0 XP</span>
+    <div class="header-derecha">
+      <div class="nivel-badge" id="nivel-badge-inicio">
+        <span id="nivel-titulo-inicio">Principiante</span>
+        <span class="xp-badge" id="xp-badge-inicio">0 XP</span>
+        <span class="racha-badge" id="racha-badge-inicio"></span>
+      </div>
+      <button class="btn-perfil" onclick="irAPerfil()">👤 Perfil</button>
     </div>
   </header>
 
@@ -98,17 +102,38 @@
     </div>
   </header>
 
-  <div class="modulos-progreso-global">
-    <div class="progreso-texto">
-      <span id="mod-completados">0</span> / <span id="mod-total">0</span> módulos completados
-      — <span id="mod-xp-ganado">0</span> XP ganados
-    </div>
-    <div class="progreso-bar-global">
-      <div class="progreso-bar-fill" id="modulos-barra-fill" style="width:0%"></div>
-    </div>
+  <div class="tabs-switch">
+    <button class="tab-btn activo" id="tab-btn-modulos" onclick="mostrarTabModulos()">📚 Módulos</button>
+    <button class="tab-btn" id="tab-btn-proyectos" onclick="mostrarTabProyectos()">🚀 Proyectos</button>
   </div>
 
-  <div class="modulos-contenido" id="modulos-lista"></div>
+  <div id="vista-modulos">
+    <div class="modulos-progreso-global">
+      <div class="progreso-texto">
+        <span id="mod-completados">0</span> / <span id="mod-total">0</span> módulos completados
+        — <span id="mod-xp-ganado">0</span> XP ganados
+      </div>
+      <div class="progreso-bar-global">
+        <div class="progreso-bar-fill" id="modulos-barra-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="modulos-contenido" id="modulos-lista"></div>
+  </div>
+
+  <div id="vista-proyectos" class="oculta">
+    <div class="modulos-progreso-global">
+      <div class="progreso-texto">
+        <span id="proy-completados">0</span> / <span id="proy-total">0</span> proyectos completados
+        — <span id="proy-xp-ganado">0</span> XP ganados
+      </div>
+      <div class="progreso-bar-global">
+        <div class="progreso-bar-fill" id="proyectos-barra-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="modulos-contenido" id="proyectos-lista"></div>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════ PANTALLA 3: EDITOR ═══════════════════════════════════ -->
@@ -205,7 +230,113 @@
           rows="2"
           onkeydown="iaInputKeydown(event)"
         ></textarea>
-        <button class="btn-ia-enviar" onclick="enviarPreguntaIA()">Enviar</button>
+        <button id="btn-ia-enviar" class="btn-ia-enviar" onclick="enviarPreguntaIA()">Enviar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ PANTALLA 3B: PROYECTO GUIADO ══════════════════════════ -->
+<div id="pantalla-proyecto" class="pantalla">
+  <header class="editor-header">
+    <button class="btn-back" onclick="irAProyectos()">← Proyectos</button>
+    <div class="editor-modulo-info">
+      <span id="proy-dificultad-badge" class="dificultad-badge">Principiante</span>
+      <span id="proy-titulo-header">Título del proyecto</span>
+    </div>
+    <div class="editor-header-actions">
+      <button class="btn-completar" id="btn-completar-proyecto" onclick="marcarProyectoCompletado()">
+        ✓ Marcar proyecto completado
+      </button>
+    </div>
+  </header>
+
+  <div class="editor-layout">
+    <!-- COLUMNA IZQUIERDA: Guía del proyecto -->
+    <div class="editor-col editor-col-izq">
+      <div class="editor-section">
+        <h3 class="section-title">🎯 Objetivo</h3>
+        <div class="teoria-text" id="proy-objetivo"></div>
+      </div>
+      <div class="editor-section">
+        <h3 class="section-title">📋 Requisitos previos</h3>
+        <ul class="proy-lista" id="proy-requisitos"></ul>
+      </div>
+      <div class="editor-section">
+        <h3 class="section-title">🧭 Pasos</h3>
+        <div class="proy-pasos" id="proy-pasos"></div>
+      </div>
+      <div class="editor-section">
+        <h3 class="section-title">✅ Criterios de finalización</h3>
+        <ul class="proy-lista" id="proy-criterios"></ul>
+      </div>
+      <div class="editor-section">
+        <h3 class="section-title">⚡ Retos extra</h3>
+        <ul class="proy-lista" id="proy-retos"></ul>
+      </div>
+    </div>
+
+    <!-- COLUMNA CENTRAL: Editor de código -->
+    <div class="editor-col editor-col-centro">
+      <div class="editor-section editor-code-section">
+        <div class="code-header">
+          <span class="code-lang-badge" id="proy-code-lang-badge">Python</span>
+          <button class="btn-limpiar" onclick="limpiarEditorProyecto()" title="Limpiar editor">🗑</button>
+        </div>
+        <div class="code-editor-wrap">
+          <textarea
+            id="proy-code-editor"
+            class="code-editor"
+            spellcheck="false"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            placeholder="# Escribí tu código acá..."
+          ></textarea>
+        </div>
+        <div class="editor-actions">
+          <button class="btn-run" id="proy-btn-run" onclick="ejecutarCodigoProyecto()">
+            ▶ Correr
+          </button>
+          <span class="run-tiempo" id="proy-run-tiempo"></span>
+        </div>
+      </div>
+
+      <div class="editor-section output-section">
+        <div class="output-header">
+          <span class="output-title">Output</span>
+          <span class="output-status" id="proy-output-status"></span>
+        </div>
+        <pre class="output-pre" id="proy-output-pre">El output aparecerá aquí...</pre>
+      </div>
+    </div>
+
+    <!-- COLUMNA DERECHA: Mentor IA -->
+    <div class="editor-col editor-col-der">
+      <div class="ia-header">
+        <span class="ia-title">🤖 Mentor IA</span>
+        <div class="ia-estado" id="proy-ia-estado-badge">...</div>
+        <button class="btn-limpiar-ia" onclick="limpiarChatIAProyecto()" title="Limpiar chat">↺</button>
+      </div>
+
+      <div class="ia-chat" id="proy-ia-chat">
+        <div class="ia-mensaje ia-bienvenida">
+          <span class="ia-avatar">🤖</span>
+          <div class="ia-burbuja">
+            ¡Hola! Soy tu mentor para este proyecto. Te voy a guiar con preguntas, pistas y explicaciones, pero la solución la construís vos. ¡Empecemos!
+          </div>
+        </div>
+      </div>
+
+      <div class="ia-input-wrap">
+        <textarea
+          id="proy-ia-input"
+          class="ia-input"
+          placeholder="Preguntame algo sobre este paso..."
+          rows="2"
+          onkeydown="iaInputKeydownProyecto(event)"
+        ></textarea>
+        <button id="proy-btn-ia-enviar" class="btn-ia-enviar" onclick="enviarPreguntaIAProyecto()">Enviar</button>
       </div>
     </div>
   </div>
@@ -252,6 +383,18 @@
       </button>
     </div>
   </div>
+</div>
+
+<!-- ═══════════════════════════════════ PANTALLA 4: PERFIL ═══════════════════════════════════ -->
+<div id="pantalla-perfil" class="pantalla">
+  <header class="modulos-header">
+    <button class="btn-back" onclick="irAInicio()">← Inicio</button>
+    <div style="flex:1;text-align:center;">
+      <span style="font-size:18px;font-weight:700;">Mi Perfil</span>
+    </div>
+    <div style="width:80px;"></div>
+  </header>
+  <div class="perfil-contenido" id="perfil-contenido"></div>
 </div>
 
 <!-- ═══════════════════════════════════ TOAST NOTIFICACIÓN ════════════════════════════════════ -->

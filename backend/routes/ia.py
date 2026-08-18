@@ -6,7 +6,7 @@ from typing import Optional
 
 router = APIRouter()
 
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent"
 MAX_HISTORIAL = 20
 
 SYSTEM_PROMPT = """Sos CodeTutor, un tutor de programación amigable y entusiasta. Tu misión es ayudar a estudiantes a aprender a programar.
@@ -48,7 +48,7 @@ async def _llamar_gemini(mensajes: list, system: str = SYSTEM_PROMPT) -> str:
         "systemInstruction": {"parts": [{"text": system}]},
         "generationConfig": {
             "temperature": 0.7,
-            "maxOutputTokens": 500,
+            "maxOutputTokens": 2048,
             "topP": 0.9,
         },
     }
@@ -123,6 +123,7 @@ async def preguntar(req: PreguntaRequest):
 
 @router.post("/ia/analizar")
 async def analizar_codigo(req: AnalizarRequest):
+    global historial
     partes = []
 
     if req.modulo_titulo:

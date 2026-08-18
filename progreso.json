@@ -2,8 +2,25 @@
   "python": [
     1
   ],
-  "javascript": [],
+  "javascript": [
+    1
+  ],
   "cpp": [],
-  "xp": 50,
-  "nivel": 1
+  "xp": 250,
+  "nivel": 2,
+  "racha": 1,
+  "mejor_racha": 1,
+  "ultima_actividad": "2026-08-17",
+  "proyectos": {
+    "python": [
+      1
+    ],
+    "javascript": [],
+    "cpp": []
+  },
+  "proyectos_pasos": {
+    "python_1": [
+      0
+    ]
+  }
 }

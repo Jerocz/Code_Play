@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from routes import python, javascript, cpp, progreso, ejecutar, ia
+from routes import python, javascript, cpp, progreso, ejecutar, ia, proyectos
 
 app = FastAPI(title="CodeTutor API", version="1.0.0")
 
@@ -14,6 +14,7 @@ app.include_router(cpp.router, prefix="/api")
 app.include_router(progreso.router, prefix="/api")
 app.include_router(ejecutar.router, prefix="/api")
 app.include_router(ia.router)
+app.include_router(proyectos.router, prefix="/api")
 
 # Directorio frontend
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")

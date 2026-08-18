@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import date
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -46,14 +47,28 @@ XP_POR_MODULO = {
 
 
 def _default_progreso():
-    return {"python": [], "javascript": [], "cpp": [], "xp": 0, "nivel": 1}
+    return {
+        "python": [], "javascript": [], "cpp": [],
+        "xp": 0, "nivel": 1,
+        "racha": 0, "mejor_racha": 0, "ultima_actividad": None,
+        "proyectos": {"python": [], "javascript": [], "cpp": []},
+        "proyectos_pasos": {},
+    }
 
 
 def _cargar_progreso():
     ruta = os.path.abspath(PROGRESO_FILE)
     try:
         with open(ruta, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+            data.setdefault("racha", 0)
+            data.setdefault("mejor_racha", 0)
+            data.setdefault("ultima_actividad", None)
+            proyectos = data.setdefault("proyectos", {})
+            for lang in ["python", "javascript", "cpp"]:
+                proyectos.setdefault(lang, [])
+            data.setdefault("proyectos_pasos", {})
+            return data
     except (FileNotFoundError, json.JSONDecodeError):
         return _default_progreso()
 
@@ -79,6 +94,42 @@ def _calcular_nivel(xp: int) -> dict:
         "xp_siguiente": xp_siguiente,
         "progreso_pct": round(progreso_nivel, 1),
     }
+
+
+def _calcular_racha(progreso: dict):
+    racha = progreso.get("racha", 0)
+    mejor = progreso.get("mejor_racha", 0)
+    ultima = progreso.get("ultima_actividad")
+    today = date.today().isoformat()
+
+    if ultima is None:
+        racha = 1
+        es_nueva = True
+    else:
+        today_date = date.fromisoformat(today)
+        ultima_date = date.fromisoformat(ultima)
+        diff = (today_date - ultima_date).days
+        if diff == 0:
+            es_nueva = False
+        elif diff == 1:
+            racha += 1
+            es_nueva = True
+        else:
+            racha = 1
+            es_nueva = True
+
+    mejor = max(mejor, racha)
+    return racha, mejor, today, es_nueva
+
+
+def _bonus_racha(racha: int, xp_base: int) -> int:
+    if racha >= 10:
+        return round(xp_base * 0.5)
+    elif racha >= 5:
+        return round(xp_base * 0.25)
+    elif racha >= 2:
+        return round(xp_base * 0.1)
+    return 0
 
 
 class CompletarRequest(BaseModel):
@@ -110,15 +161,28 @@ def completar_modulo(req: CompletarRequest):
             "message": "Ya completado anteriormente",
             "ya_estaba": True,
             "xp_ganado": 0,
+            "xp_bonus_racha": 0,
+            "xp_total_ganado": 0,
             "xp_total": progreso["xp"],
             "nivel_info": _calcular_nivel(progreso["xp"]),
             "completados": completados,
+            "racha": progreso.get("racha", 0),
+            "mejor_racha": progreso.get("mejor_racha", 0),
+            "es_nueva_racha": False,
         }
 
+    racha, mejor_racha, today, es_nueva_racha = _calcular_racha(progreso)
     xp_ganado = XP_POR_MODULO.get(lenguaje, {}).get(req.modulo_id, 50)
+    xp_bonus = _bonus_racha(racha, xp_ganado)
+    xp_total_ganado = xp_ganado + xp_bonus
+
     completados.append(req.modulo_id)
     progreso[lenguaje] = completados
-    progreso["xp"] = progreso.get("xp", 0) + xp_ganado
+    progreso["xp"] = progreso.get("xp", 0) + xp_total_ganado
+    progreso["racha"] = racha
+    progreso["mejor_racha"] = mejor_racha
+    progreso["ultima_actividad"] = today
+
     nivel_info = _calcular_nivel(progreso["xp"])
     progreso["nivel"] = nivel_info["nivel"]
 
@@ -128,9 +192,14 @@ def completar_modulo(req: CompletarRequest):
         "message": "¡Módulo completado!",
         "ya_estaba": False,
         "xp_ganado": xp_ganado,
+        "xp_bonus_racha": xp_bonus,
+        "xp_total_ganado": xp_total_ganado,
         "xp_total": progreso["xp"],
         "nivel_info": nivel_info,
         "completados": completados,
+        "racha": racha,
+        "mejor_racha": mejor_racha,
+        "es_nueva_racha": es_nueva_racha,
     }
 
 
