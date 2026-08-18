@@ -1,1270 +1,713 @@
 'use strict';
 
-/* ═══════════════════════════════════ ESTADO GLOBAL ═══════════════════════════════════ */
-const estado = {
-  lenguaje: null,
-  modulos: [],
-  progreso: {
-    python: [], javascript: [], cpp: [], xp: 0, nivel: 1, nivel_info: {}, racha: 0, mejor_racha: 0,
-    proyectos: { python: [], javascript: [], cpp: [] }, proyectos_pasos: {},
-  },
-  moduloActual: null,
-  iaConfigurada: false,
-  iaOcupada: false,
-  corriendo: false,
-  proyectos: [],
-  proyectosCargados: false,
-  proyectoActual: null,
-  iaOcupadaProyecto: false,
-  corriendoProyecto: false,
-};
+/* ═══════════════════════════════════════════════════════════════════════
+   Code Play — frontend. Usa los mismos endpoints que ya tenés:
+     GET  /api/progreso                POST /api/progreso/completar
+     GET  /api/modulos/:lang           POST /api/ejecutar
+     GET  /api/proyectos/:lang         POST /api/proyectos/completar
+     GET  /api/tienda                  POST /api/tienda/comprar
+     GET  /ia/estado                   POST /ia/analizar  POST /ia/preguntar
+   Lo único que no existe en el backend son los cofres y las insignias:
+   se calculan acá a partir del progreso (marcados con COFRE / INSIGNIA).
+   ═══════════════════════════════════════════════════════════════════════ */
 
-const NIVEL_ICONS = ['🌱', '📘', '🎓', '💻', '⚡', '🔥', '👑'];
-const NIVELES_INFO = [
-  { nivel: 1, titulo: "Principiante", min_xp: 0 },
-  { nivel: 2, titulo: "Aprendiz",     min_xp: 200 },
-  { nivel: 3, titulo: "Estudiante",   min_xp: 500 },
-  { nivel: 4, titulo: "Desarrollador",min_xp: 1000 },
-  { nivel: 5, titulo: "Programador",  min_xp: 2000 },
-  { nivel: 6, titulo: "Experto",      min_xp: 3000 },
-  { nivel: 7, titulo: "Maestro",      min_xp: 4500 },
+const NIVELES = [
+  { nivel: 1, titulo: 'Principiante', min: 0, icono: 'sprout' },
+  { nivel: 2, titulo: 'Aprendiz', min: 200, icono: 'book-open' },
+  { nivel: 3, titulo: 'Estudiante', min: 500, icono: 'graduation-cap' },
+  { nivel: 4, titulo: 'Desarrollador', min: 1000, icono: 'laptop' },
+  { nivel: 5, titulo: 'Programador', min: 2000, icono: 'zap' },
+  { nivel: 6, titulo: 'Experto', min: 3000, icono: 'flame' },
+  { nivel: 7, titulo: 'Maestro', min: 4500, icono: 'crown' },
 ];
 
-function getNivelIcon(nivel) {
-  return NIVEL_ICONS[(nivel || 1) - 1] || '🌱';
-}
-
-const LANG_META = {
-  python:     { icon: '🐍', nombre: 'Python',     total: 25, proyectosTotal: 5, placeholder: '# Escribí tu código Python acá...' },
-  javascript: { icon: '🟨', nombre: 'JavaScript', total: 10, proyectosTotal: 5, placeholder: '// Escribí tu código JS acá...' },
-  cpp:        { icon: '⚙️', nombre: 'C++',         total: 10, proyectosTotal: 5, placeholder: '// Escribí tu código C++ acá...' },
+const LANG = {
+  python: { nombre: 'Python', archivo: 'mision.py', placeholder: '# Escribí tu código acá\n', total: 25 },
+  javascript: { nombre: 'JavaScript', archivo: 'mision.js', placeholder: '// Escribí tu código acá\n', total: 10 },
+  cpp: { nombre: 'C++', archivo: 'mision.cpp', placeholder: '// Escribí tu código acá\n', total: 10 },
 };
 
-/* ═══════════════════════════════════ INICIALIZACIÓN ══════════════════════════════════ */
+const ICONO_ITEM = {
+  tema_matrix: 'terminal', tema_oceano: 'waves', tema_fuego: 'flame', tema_sakura: 'flower-2',
+  titulo_bug_hunter: 'bug', titulo_pythonista: 'git-branch', titulo_code_ninja: 'swords',
+  titulo_hacker: 'shield-half', titulo_10x: 'rocket', racha_shield: 'shield',
+  boost_xp: 'sparkles', llave_maestra: 'key-round', lluvia_codigo: 'cloud-rain',
+};
+const NOMBRE_CATEGORIA = { tema: 'Temas', titulo: 'Títulos', powerup: 'Objetos', cosmetico: 'Cosméticos' };
+
+const CONSEJOS = [
+  'Leé el error de abajo hacia arriba: la última línea casi siempre dice qué pasó.',
+  'Si te trabás más de diez minutos, escribí en palabras lo que querés que haga el programa.',
+  'Correr el código a medias es mejor que escribirlo entero y correrlo al final.',
+  'Ponerle buen nombre a una variable te ahorra tres comentarios.',
+  'Volvé mañana aunque sea diez minutos: la racha vale más que la sesión maratónica.',
+];
+
+const OFFSETS = [0, 118, 170, 118, 0, -118, -170, -118];
+
+const estado = {
+  pantalla: 'mapa',
+  lang: 'python',
+  progreso: { python: [], javascript: [], cpp: [], xp: 0, nivel: 1, nivel_info: {}, racha: 0, mejor_racha: 0, proyectos: {} },
+  modulos: [],
+  proyectos: [],
+  tienda: null,
+  modulo: null,
+  tab: 'teoria',
+  iaActiva: false,
+  iaOcupada: false,
+  corriendo: false,
+  consejo: 0,
+};
+
+/* ═══════════════ ARRANQUE ═══════════════ */
 document.addEventListener('DOMContentLoaded', async () => {
+  conectarUI();
   await cargarProgreso();
   await verificarIA();
-  configurarEditor();
+  await cargarLenguaje('python');
+  nuevoConsejo();
+  iconos();
 });
 
-async function cargarProgreso() {
-  try {
-    const data = await api('/api/progreso');
-    estado.progreso = data;
-    actualizarUIProgreso();
-  } catch (e) {
-    console.warn('No se pudo cargar el progreso:', e);
-  }
-}
-
-function actualizarUIProgreso() {
-  const p = estado.progreso;
-  const nivel = p.nivel_info || {};
-  const racha = p.racha || 0;
-
-  setText('nivel-titulo-inicio', nivel.titulo || 'Principiante');
-  setText('xp-badge-inicio', `${p.xp || 0} XP`);
-
-  const rachaBadge = document.getElementById('racha-badge-inicio');
-  if (rachaBadge) {
-    if (racha > 0) {
-      rachaBadge.textContent = `🔥 ${racha}`;
-      rachaBadge.style.display = '';
-    } else {
-      rachaBadge.style.display = 'none';
-    }
-  }
-
-  for (const lang of ['python', 'javascript', 'cpp']) {
-    const completados = (p[lang] || []).length;
-    const total = LANG_META[lang].total;
-    const pct = total > 0 ? (completados / total) * 100 : 0;
-    setStyle('prog-' + lang, 'width', pct + '%');
-    setText('prog-' + lang + '-texto', `${completados} / ${total} módulos`);
-  }
-}
-
-/* ═══════════════════════════════════ NAVEGACIÓN ══════════════════════════════════════ */
-function mostrarPantalla(id) {
-  document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
-  const el = document.getElementById(id);
-  if (el) el.classList.add('activa');
-  window.scrollTo(0, 0);
-}
-
-async function seleccionarLenguaje(lang) {
-  estado.lenguaje = lang;
-  const meta = LANG_META[lang];
-
-  setText('modulos-lang-icon', meta.icon);
-  setText('modulos-lang-nombre', meta.nombre);
-
-  try {
-    estado.modulos = await api(`/api/modulos/${lang}`);
-  } catch (e) {
-    toast('Error cargando módulos. Revisá que el servidor esté corriendo.', 'error');
-    return;
-  }
-
-  estado.proyectos = [];
-  estado.proyectosCargados = false;
-
-  renderizarModulos();
-  actualizarProgresoModulos();
-  mostrarTabModulos();
-  mostrarPantalla('pantalla-modulos');
-}
-
-function irAInicio() {
-  mostrarPantalla('pantalla-inicio');
-}
-
-function irAPerfil() {
-  renderizarPerfil();
-  mostrarPantalla('pantalla-perfil');
-}
-
-function irAModulos() {
-  mostrarPantalla('pantalla-modulos');
-  limpiarChatIA();
-}
-
-/* ═══════════════════════════════════ PANTALLA MÓDULOS ════════════════════════════════ */
-function renderizarModulos() {
-  const lista = document.getElementById('modulos-lista');
-  lista.innerHTML = '';
-
-  const completados = estado.progreso[estado.lenguaje] || [];
-  const bloques = agruparPorBloque(estado.modulos);
-
-  for (const [bloque, modulos] of Object.entries(bloques)) {
-    const seccion = document.createElement('div');
-    seccion.className = 'bloque-section';
-
-    const titulo = document.createElement('div');
-    titulo.className = 'bloque-titulo';
-    titulo.textContent = bloque;
-    seccion.appendChild(titulo);
-
-    for (const modulo of modulos) {
-      const estaCompletado = completados.includes(modulo.id);
-      const desbloqueado = esDesbloqueado(modulo.id, completados, estado.modulos);
-      const card = crearCardModulo(modulo, estaCompletado, desbloqueado);
-      seccion.appendChild(card);
-    }
-
-    lista.appendChild(seccion);
-  }
-}
-
-function agruparPorBloque(modulos) {
-  const grupos = {};
-  for (const m of modulos) {
-    if (!grupos[m.bloque]) grupos[m.bloque] = [];
-    grupos[m.bloque].push(m);
-  }
-  return grupos;
-}
-
-function esDesbloqueado(id, completados, modulos) {
-  const idx = modulos.findIndex(m => m.id === id);
-  if (idx === 0) return true;
-  const anterior = modulos[idx - 1];
-  return completados.includes(anterior.id);
-}
-
-function crearCardModulo(modulo, completado, desbloqueado) {
-  const card = document.createElement('div');
-  card.className = 'modulo-card' +
-    (completado ? ' completado' : '') +
-    (!desbloqueado ? ' bloqueado' : '');
-
-  const numEl = document.createElement('div');
-  numEl.className = 'modulo-num';
-  numEl.textContent = completado ? '✓' : modulo.id;
-
-  const info = document.createElement('div');
-  info.className = 'modulo-info';
-
-  const titulo = document.createElement('div');
-  titulo.className = 'modulo-titulo';
-  titulo.textContent = modulo.titulo;
-
-  const desc = document.createElement('div');
-  desc.className = 'modulo-desc';
-  desc.textContent = modulo.descripcion;
-
-  info.appendChild(titulo);
-  info.appendChild(desc);
-
-  const xpBadge = document.createElement('div');
-  xpBadge.className = 'modulo-xp-badge';
-  xpBadge.textContent = completado ? '✓ Completado' : `+${modulo.xp} XP`;
-
-  card.appendChild(numEl);
-  card.appendChild(info);
-  card.appendChild(xpBadge);
-
-  if (!desbloqueado) {
-    const lock = document.createElement('div');
-    lock.className = 'modulo-lock';
-    lock.textContent = '🔒';
-    card.appendChild(lock);
-  }
-
-  if (desbloqueado) {
-    card.onclick = () => abrirModal(modulo, completado);
-  }
-
-  return card;
-}
-
-function actualizarProgresoModulos() {
-  const completados = (estado.progreso[estado.lenguaje] || []).length;
-  const total = estado.modulos.length;
-  const pct = total > 0 ? (completados / total) * 100 : 0;
-  const xpGanado = calcularXPGanado();
-  const nivel = estado.progreso.nivel_info || {};
-
-  setText('mod-completados', completados);
-  setText('mod-total', total);
-  setText('mod-xp-ganado', xpGanado);
-  setStyle('modulos-barra-fill', 'width', pct + '%');
-
-  setText('modulos-nivel-titulo', nivel.titulo || 'Principiante');
-  setText('modulos-xp-valor', `${estado.progreso.xp || 0} XP`);
-  setStyle('modulos-xp-fill', 'width', (nivel.progreso_pct || 0) + '%');
-}
-
-function calcularXPGanado() {
-  if (!estado.lenguaje) return 0;
-  const completados = estado.progreso[estado.lenguaje] || [];
-  return completados.reduce((sum, id) => {
-    const mod = estado.modulos.find(m => m.id === id);
-    return sum + (mod ? mod.xp : 0);
-  }, 0);
-}
-
-/* ═══════════════════════════════════ MODAL ═══════════════════════════════════════════ */
-let moduloEnModal = null;
-
-function abrirModal(modulo, completado) {
-  moduloEnModal = modulo;
-
-  setText('modal-bloque', modulo.bloque);
-  setText('modal-xp', `+${modulo.xp} XP`);
-  setText('modal-titulo', modulo.titulo);
-  setText('modal-desc', modulo.descripcion);
-  setText('modal-teoria-text', modulo.teoria);
-  setText('modal-codigo', modulo.ejemplo);
-  setText('modal-ejercicio-text', modulo.ejercicio);
-  setText('modal-pista-text', modulo.pista);
-
-  // Resetear tabs
-  switchTab('teoria', document.querySelector('.modal-tab'));
-
-  // Ocultar pista
-  hide('modal-pista-text');
-  setText('btn-pista-modal', '💡 Ver pista');
-
-  // Botón completar
-  const btnCompletar = document.getElementById('btn-modal-completar');
-  if (completado) {
-    btnCompletar.textContent = '✓ Ya completado';
-    btnCompletar.classList.add('ya-completado');
-  } else {
-    btnCompletar.textContent = '✓ Marcar completado';
-    btnCompletar.classList.remove('ya-completado');
-  }
-
-  // Si ya está completado, agregar botón repetir
-  const footer = document.querySelector('.modal-footer');
-  const existeRepetir = footer.querySelector('.btn-repetir');
-  if (existeRepetir) existeRepetir.remove();
-
-  if (completado) {
-    const btnRepetir = document.createElement('button');
-    btnRepetir.className = 'btn-modal-practicar btn-repetir';
-    btnRepetir.style.background = 'var(--blue)';
-    btnRepetir.textContent = '🔁 Repetir';
-    btnRepetir.onclick = abrirEditor;
-    footer.insertBefore(btnRepetir, footer.firstChild);
-  }
-
-  show('modal-overlay');
-  document.body.style.overflow = 'hidden';
-}
-
-function cerrarModal(e) {
-  if (e && e.target !== document.getElementById('modal-overlay')) return;
-  hide('modal-overlay');
-  document.body.style.overflow = '';
-  moduloEnModal = null;
-}
-
-function switchTab(tab, btn) {
-  document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('activo'));
-  if (btn) btn.classList.add('activo');
-
-  hide('modal-teoria');
-  hide('modal-ejemplo');
-  hide('modal-ejercicio');
-  show('modal-' + tab);
-}
-
-function togglePistaModal() {
-  const pista = document.getElementById('modal-pista-text');
-  const btn = document.getElementById('btn-pista-modal');
-  if (pista.classList.contains('oculta')) {
-    show('modal-pista-text');
-    btn.textContent = '💡 Ocultar pista';
-  } else {
-    hide('modal-pista-text');
-    btn.textContent = '💡 Ver pista';
-  }
-}
-
-async function marcarCompletadoDesdeModal() {
-  if (!moduloEnModal) return;
-  const btn = document.getElementById('btn-modal-completar');
-  if (btn.classList.contains('ya-completado')) return;
-  await marcarModuloCompletado(moduloEnModal.id);
-}
-
-/* ═══════════════════════════════════ EDITOR ══════════════════════════════════════════ */
-function configurarEditor() {
-  const editor = document.getElementById('code-editor');
-
-  editor.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const start = editor.selectionStart;
-      const end = editor.selectionEnd;
-      editor.value = editor.value.substring(0, start) + '    ' + editor.value.substring(end);
-      editor.selectionStart = editor.selectionEnd = start + 4;
-    }
+function conectarUI() {
+  document.querySelectorAll('[data-pantalla]').forEach(b => {
+    b.addEventListener('click', () => irA(b.dataset.pantalla));
+  });
+  document.querySelectorAll('#seg-lenguajes .seg-opt').forEach(b => {
+    b.addEventListener('click', () => cambiarLenguaje(b.dataset.lang));
+  });
+  document.getElementById('btn-consejo').addEventListener('click', nuevoConsejo);
+  document.getElementById('btn-volver-mapa').addEventListener('click', () => irA('mapa'));
+  document.getElementById('btn-pista').addEventListener('click', togglePista);
+  document.getElementById('btn-limpiar').addEventListener('click', () => {
+    const c = document.getElementById('code'); c.value = ''; c.focus();
+  });
+  document.getElementById('btn-correr').addEventListener('click', ejecutar);
+  document.getElementById('btn-completar').addEventListener('click', completarModulo);
+  document.getElementById('btn-enviar').addEventListener('click', preguntarIA);
+  document.getElementById('pregunta').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); preguntarIA(); }
+  });
+  document.getElementById('dlg-cerrar').addEventListener('click', cerrarDialogo);
+  document.getElementById('dialogo').addEventListener('click', e => {
+    if (e.target.id === 'dialogo') cerrarDialogo();
+  });
+  document.getElementById('dlg-empezar').addEventListener('click', abrirEditor);
+  document.querySelectorAll('.dialog-tabs .btn').forEach(b => {
+    b.addEventListener('click', () => cambiarTab(b.dataset.tab));
+  });
+  document.getElementById('levelup-cerrar').addEventListener('click', () => {
+    document.getElementById('levelup').classList.add('oculta');
+  });
+  document.getElementById('code').addEventListener('keydown', e => {
+    if (e.key !== 'Tab') return;
+    e.preventDefault();
+    const t = e.target, i = t.selectionStart;
+    t.value = t.value.slice(0, i) + '    ' + t.value.slice(t.selectionEnd);
+    t.selectionStart = t.selectionEnd = i + 4;
   });
 }
 
-function abrirEditor() {
-  const modulo = moduloEnModal;
-  if (!modulo) return;
+/* ═══════════════ NAVEGACIÓN ═══════════════ */
+function irA(pantalla) {
+  estado.pantalla = pantalla;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('activa'));
+  document.getElementById('screen-' + pantalla).classList.add('activa');
+  document.querySelectorAll('.rail-btn').forEach(b => b.classList.toggle('activo', b.dataset.pantalla === pantalla));
+  window.scrollTo(0, 0);
 
-  estado.moduloActual = modulo;
-  const completado = (estado.progreso[estado.lenguaje] || []).includes(modulo.id);
-  const meta = LANG_META[estado.lenguaje];
+  if (pantalla === 'proyectos') cargarProyectos();
+  if (pantalla === 'tienda') cargarTienda();
+  if (pantalla === 'perfil') renderPerfil();
+  actualizarCabecera();
+}
 
-  // Actualizar header
-  setText('editor-modulo-numero', `#${modulo.id}`);
-  setText('editor-modulo-titulo', modulo.titulo);
+async function cambiarLenguaje(lang) {
+  if (lang === estado.lang) return;
+  document.querySelectorAll('#seg-lenguajes .seg-opt').forEach(b => b.classList.toggle('activo', b.dataset.lang === lang));
+  await cargarLenguaje(lang);
+  irA('mapa');
+}
 
-  // Columna izquierda
-  setText('editor-teoria', modulo.teoria);
-  setText('editor-ejercicio', modulo.ejercicio);
-  setText('editor-pista', modulo.pista);
-  hide('editor-pista');
-  setText('btn-pista', '💡 Mostrar pista');
-
-  // Badge de lenguaje
-  setText('code-lang-badge', meta.nombre);
-  document.getElementById('code-editor').placeholder = meta.placeholder;
-
-  // Botón completar
-  const btnCompletar = document.getElementById('btn-completar-editor');
-  if (completado) {
-    btnCompletar.textContent = '✓ Completado';
-    btnCompletar.classList.add('ya-completado');
-  } else {
-    btnCompletar.textContent = '✓ Marcar completado';
-    btnCompletar.classList.remove('ya-completado');
+async function cargarLenguaje(lang) {
+  estado.lang = lang;
+  estado.proyectos = [];
+  try {
+    estado.modulos = await api('/api/modulos/' + lang);
+  } catch (e) {
+    estado.modulos = [];
+    aviso('No pude cargar los módulos. ¿Está corriendo el backend?', true);
   }
+  renderMapa();
+  actualizarCabecera();
+}
 
-  // Limpiar output
-  const outputPre = document.getElementById('output-pre');
-  outputPre.textContent = 'El output aparecerá aquí...';
-  outputPre.className = 'output-pre';
-  setText('output-status', '');
-  setText('run-tiempo', '');
+/* ═══════════════ PROGRESO Y CABECERA ═══════════════ */
+async function cargarProgreso() {
+  try { estado.progreso = await api('/api/progreso'); } catch (e) { /* offline */ }
+}
 
-  cerrarModal();
-  mostrarPantalla('pantalla-editor');
+function nivelDe(xp) {
+  let n = NIVELES[0];
+  NIVELES.forEach(x => { if (xp >= x.min) n = x; });
+  return n;
+}
+
+function actualizarCabecera() {
+  const p = estado.progreso;
+  const xp = p.xp || 0;
+  const nivel = nivelDe(xp);
+  const sig = NIVELES.find(n => n.min > xp);
+  const pct = sig ? Math.round(((xp - nivel.min) / (sig.min - nivel.min)) * 100) : 100;
+  const hechos = (p[estado.lang] || []).length;
+
+  texto('hud-xp', xp);
+  texto('hud-racha', p.racha || 0);
+  texto('hud-nivel-titulo', nivel.titulo);
+  texto('hud-nivel-falta', sig ? (sig.min - xp) + ' XP' : 'máximo');
+  document.getElementById('hud-nivel-fill').style.width = pct + '%';
+  document.getElementById('hud-nivel-icono').innerHTML = icono(nivel.icono, 18);
+
+  const titulos = {
+    mapa: 'El camino de ' + LANG[estado.lang].nombre,
+    editor: estado.modulo ? estado.modulo.titulo : 'Misión',
+    proyectos: 'Proyectos',
+    tienda: 'Tienda',
+    perfil: 'Tu perfil',
+  };
+  const subtitulos = {
+    mapa: hechos + ' de ' + estado.modulos.length + ' misiones completadas',
+    editor: 'Escribí, corré y reclamá la recompensa',
+    proyectos: 'Construcciones largas para aplicar lo aprendido',
+    tienda: 'Gastá XP en objetos que te acompañan',
+    perfil: 'Todo lo que llevás construido',
+  };
+  texto('pantalla-titulo', titulos[estado.pantalla]);
+  texto('pantalla-subtitulo', subtitulos[estado.pantalla]);
+  iconos();
+}
+
+/* ═══════════════ MAPA ═══════════════ */
+function renderMapa() {
+  const cont = document.getElementById('sendero');
+  const hechos = estado.progreso[estado.lang] || [];
+  const actual = (estado.modulos.find(m => !hechos.includes(m.id)) || {}).id;
+  let html = '';
+  let bloque = null;
+  let i = 0;
+
+  estado.modulos.forEach(m => {
+    if (m.bloque !== bloque) {
+      bloque = m.bloque;
+      html += '<div class="bloque-sep">' + escapar(bloque) + '</div>';
+    }
+    const hecho = hechos.includes(m.id);
+    const abierto = m.id === 1 || hechos.includes(m.id - 1);
+    const esActual = m.id === actual;
+    const clase = hecho ? 'nodo-hecho' : (esActual ? 'nodo-actual' : (abierto ? '' : 'nodo-bloqueado'));
+
+    html += '<div class="nodo-fila" style="transform:translateX(' + OFFSETS[i % OFFSETS.length] + 'px)">' +
+      '<button class="nodo ' + clase + '" data-modulo="' + m.id + '">' +
+        '<span class="nodo-circulo">' +
+          (hecho ? icono('check', 30, 3.2) : m.id) +
+          (abierto ? '' : '<span class="nodo-candado">' + icono('lock', 12, 3) + '</span>') +
+        '</span>' +
+        '<span class="nodo-texto">' +
+          (esActual ? '<span class="tag tag-accent">Estás acá</span>' : '') +
+          '<h3>' + escapar(m.titulo) + '</h3>' +
+          '<p>' + escapar(m.descripcion) + '</p>' +
+          '<span class="nodo-premio">' + (hecho ? 'Completada' : '+' + m.xp + ' XP') + '</span>' +
+        '</span>' +
+      '</button></div>';
+    i++;
+
+    // COFRE (visual, calculado desde el progreso)
+    if (m.id % 5 === 0) {
+      const listo = hechos.length >= m.id;
+      html += '<div class="nodo-fila" style="transform:translateX(' + OFFSETS[i % OFFSETS.length] + 'px)">' +
+        '<button class="nodo nodo-cofre ' + (listo ? '' : 'nodo-bloqueado') + '" data-cofre="' + m.id + '">' +
+          '<span class="nodo-circulo">' + icono('gift', 30) + '</span>' +
+          '<span class="nodo-texto"><h3>Cofre del bloque</h3>' +
+          '<p>Se abre al terminar las ' + m.id + ' primeras misiones.</p>' +
+          '<span class="nodo-premio">' + (listo ? 'Listo para abrir' : 'Bloqueado') + '</span></span>' +
+        '</button></div>';
+      i++;
+    }
+  });
+
+  cont.innerHTML = html || '<p class="muted">No hay módulos para este lenguaje todavía.</p>';
+
+  cont.querySelectorAll('[data-modulo]').forEach(b => {
+    b.addEventListener('click', () => {
+      if (b.classList.contains('nodo-bloqueado')) { aviso('Completá la misión anterior para abrir esta'); return; }
+      abrirDialogo(Number(b.dataset.modulo));
+    });
+  });
+  cont.querySelectorAll('[data-cofre]').forEach(b => {
+    b.addEventListener('click', () => {
+      if (b.classList.contains('nodo-bloqueado')) { aviso('Terminá el bloque para abrir el cofre'); return; }
+      aviso('Cofre abierto: +100 XP y una insignia');
+    });
+  });
+
+  renderLateral();
+}
+
+function renderLateral() {
+  const hechos = estado.progreso[estado.lang] || [];
+  const hoy = Math.min(hechos.length, 2);
+  texto('desafio-desc', 'Completá dos misiones hoy sin salir del camino de ' + LANG[estado.lang].nombre + '.');
+  texto('desafio-progreso', hoy + ' de 2 hechas');
+  document.getElementById('desafio-fill').style.width = (hoy / 2) * 100 + '%';
+
+  // Liga: mientras no exista endpoint de ranking, los rivales son fijos.
+  const yo = estado.progreso.xp || 0;
+  const gente = [
+    { nombre: 'Mara', xp: 1240 }, { nombre: 'Diego', xp: 980 },
+    { nombre: 'Vos', xp: yo, yo: true }, { nombre: 'Sofi', xp: 210 }, { nombre: 'Nico', xp: 150 },
+  ].sort((a, b) => b.xp - a.xp);
+
+  document.getElementById('ranking').innerHTML = gente.map((g, i) =>
+    '<div class="rank-fila' + (g.yo ? ' yo' : '') + '">' +
+      '<span class="rank-puesto">' + (i + 1) + '</span>' +
+      '<span class="rank-avatar">' + g.nombre[0] + '</span>' +
+      '<span class="rank-nombre">' + g.nombre + '</span>' +
+      '<span class="rank-xp">' + g.xp + ' XP</span>' +
+    '</div>').join('');
+}
+
+function nuevoConsejo() {
+  estado.consejo = (estado.consejo + 1) % CONSEJOS.length;
+  texto('pip-consejo', CONSEJOS[estado.consejo]);
+}
+
+/* ═══════════════ DIÁLOGO DE MISIÓN ═══════════════ */
+function abrirDialogo(id) {
+  const m = estado.modulos.find(x => x.id === id);
+  if (!m) return;
+  estado.modulo = m;
+  estado.tab = 'teoria';
+  texto('dlg-bloque', m.bloque);
+  texto('dlg-xp', '+' + m.xp + ' XP');
+  texto('dlg-titulo', m.titulo);
+  texto('dlg-desc', m.descripcion);
+  cambiarTab('teoria');
+  document.getElementById('dialogo').classList.remove('oculta');
+  document.body.style.overflow = 'hidden';
+  iconos();
+}
+
+function cambiarTab(tab) {
+  estado.tab = tab;
+  const m = estado.modulo;
+  if (!m) return;
+  document.querySelectorAll('.dialog-tabs .btn').forEach(b => b.classList.toggle('activo', b.dataset.tab === tab));
+  const pre = document.getElementById('dlg-contenido');
+  pre.classList.toggle('codigo', tab === 'ejemplo');
+  pre.textContent = tab === 'teoria' ? m.teoria : (tab === 'ejercicio' ? m.ejercicio : m.ejemplo);
+}
+
+function cerrarDialogo() {
+  document.getElementById('dialogo').classList.add('oculta');
+  document.body.style.overflow = '';
+}
+
+/* ═══════════════ EDITOR ═══════════════ */
+function abrirEditor() {
+  const m = estado.modulo;
+  if (!m) return;
+  cerrarDialogo();
+
+  texto('editor-mision-num', 'Misión ' + m.id);
+  texto('editor-titulo', m.titulo);
+  texto('editor-teoria', m.teoria);
+  texto('editor-ejercicio', m.ejercicio);
+  texto('editor-pista', m.pista);
+  document.getElementById('editor-pista').classList.add('oculta');
+  document.getElementById('btn-pista').innerHTML = icono('lightbulb', 15) + ' Ver una pista';
+
+  texto('code-archivo', LANG[estado.lang].archivo);
+  const code = document.getElementById('code');
+  code.value = LANG[estado.lang].placeholder;
+  code.placeholder = LANG[estado.lang].placeholder;
+
+  document.getElementById('consola').textContent = 'Todavía no corriste nada.';
+  marcarEstadoConsola('espera');
+  texto('run-tiempo', '');
+
+  const hecho = (estado.progreso[estado.lang] || []).includes(m.id);
+  const btn = document.getElementById('btn-completar');
+  btn.disabled = hecho;
+  btn.innerHTML = icono('check', 16) + (hecho ? ' Ya completada' : ' Reclamar recompensa');
+
+  reiniciarChat();
+  irA('editor');
 }
 
 function togglePista() {
-  const pista = document.getElementById('editor-pista');
-  const btn = document.getElementById('btn-pista');
-  if (pista.classList.contains('oculta')) {
-    show('editor-pista');
-    btn.textContent = '💡 Ocultar pista';
-  } else {
-    hide('editor-pista');
-    btn.textContent = '💡 Mostrar pista';
-  }
+  const p = document.getElementById('editor-pista');
+  const oculto = p.classList.toggle('oculta');
+  document.getElementById('btn-pista').innerHTML = icono('lightbulb', 15) + (oculto ? ' Ver una pista' : ' Ocultar la pista');
+  iconos();
 }
 
-function limpiarEditor() {
-  document.getElementById('code-editor').value = '';
-  document.getElementById('code-editor').focus();
-}
-
-/* ═══════════════════════════════════ EJECUCIÓN DE CÓDIGO ════════════════════════════ */
-async function ejecutarCodigo() {
+async function ejecutar() {
   if (estado.corriendo) return;
-
-  const codigo = document.getElementById('code-editor').value.trim();
-  if (!codigo) {
-    toast('Escribí algo de código primero!', 'error');
-    return;
-  }
+  const codigo = document.getElementById('code').value.trim();
+  if (!codigo) { aviso('Escribí algo primero', true); return; }
 
   estado.corriendo = true;
-  const btnRun = document.getElementById('btn-run');
-  btnRun.disabled = true;
-  btnRun.textContent = '⟳ Corriendo...';
-  btnRun.classList.add('corriendo');
+  const btn = document.getElementById('btn-correr');
+  btn.disabled = true;
+  btn.innerHTML = icono('loader', 16) + ' Corriendo…';
+  iconos();
 
-  const outputPre = document.getElementById('output-pre');
-  const outputStatus = document.getElementById('output-status');
-  const runTiempo = document.getElementById('run-tiempo');
-
-  outputPre.textContent = 'Ejecutando...';
-  outputPre.className = 'output-pre';
-  outputStatus.textContent = '';
-  outputStatus.className = 'output-status';
-  runTiempo.textContent = '';
+  const salida = document.getElementById('consola');
+  salida.textContent = 'Ejecutando…';
+  marcarEstadoConsola('espera');
 
   try {
-    const resultado = await api('/api/ejecutar', 'POST', {
-      lenguaje: estado.lenguaje,
-      codigo: codigo,
-    });
-
-    outputPre.textContent = resultado.output;
-    runTiempo.textContent = `${resultado.tiempo}s`;
-
-    if (resultado.exito) {
-      outputPre.className = 'output-pre ok';
-      outputStatus.textContent = '✓ OK';
-      outputStatus.className = 'output-status ok';
-    } else {
-      outputPre.className = 'output-pre error';
-      outputStatus.textContent = '✗ Error';
-      outputStatus.className = 'output-status error';
-    }
-
-    // Análisis automático de IA
-    if (estado.iaConfigurada && estado.moduloActual) {
-      await analizarConIA(codigo, resultado);
-    }
-
+    const r = await api('/api/ejecutar', 'POST', { lenguaje: estado.lang, codigo });
+    salida.textContent = r.output;
+    texto('run-tiempo', r.tiempo + 's');
+    marcarEstadoConsola(r.exito ? 'ok' : 'error');
+    if (estado.iaActiva && estado.modulo) analizarConIA(codigo, r);
   } catch (e) {
-    outputPre.textContent = 'Error conectando con el servidor. ¿Está corriendo el backend?';
-    outputPre.className = 'output-pre error';
-    outputStatus.textContent = '✗ Error';
-    outputStatus.className = 'output-status error';
+    salida.textContent = 'No pude conectar con el servidor. ¿Está corriendo el backend?';
+    marcarEstadoConsola('error');
   } finally {
     estado.corriendo = false;
-    btnRun.disabled = false;
-    btnRun.textContent = '▶ Correr';
-    btnRun.classList.remove('corriendo');
+    btn.disabled = false;
+    btn.innerHTML = icono('play', 16) + ' Correr';
+    iconos();
   }
 }
 
-/* ═══════════════════════════════════ TUTOR IA ═══════════════════════════════════════ */
+function marcarEstadoConsola(tipo) {
+  const t = document.getElementById('consola-estado');
+  t.className = 'tag' + (tipo === 'ok' ? ' tag-ok' : (tipo === 'error' ? ' tag-error' : ''));
+  t.textContent = tipo === 'ok' ? 'Sin errores' : (tipo === 'error' ? 'Con errores' : 'En espera');
+}
+
+async function completarModulo() {
+  const m = estado.modulo;
+  if (!m) return;
+  try {
+    const data = await api('/api/progreso/completar', 'POST', { lenguaje: estado.lang, modulo_id: m.id });
+    if (data.ya_estaba) { aviso('Esta misión ya estaba completada'); return; }
+
+    const antes = nivelDe(estado.progreso.xp || 0).nivel;
+    estado.progreso = Object.assign({}, estado.progreso, {
+      [estado.lang]: data.completados,
+      xp: data.xp_total,
+      nivel: data.nivel_info.nivel,
+      nivel_info: data.nivel_info,
+      racha: data.racha,
+      mejor_racha: data.mejor_racha,
+    });
+
+    const btn = document.getElementById('btn-completar');
+    btn.disabled = true;
+    btn.innerHTML = icono('check', 16) + ' Ya completada';
+
+    renderMapa();
+    actualizarCabecera();
+
+    if (data.nivel_info.nivel > antes) mostrarLevelUp(data.nivel_info);
+    else {
+      const bonus = data.xp_bonus_racha ? ' (+' + data.xp_bonus_racha + ' de racha)' : '';
+      aviso('+' + (data.xp_total_ganado || data.xp_ganado) + ' XP — misión completada' + bonus);
+      irA('mapa');
+    }
+    iconos();
+  } catch (e) {
+    aviso('No pude guardar el progreso', true);
+  }
+}
+
+function mostrarLevelUp(info) {
+  const n = NIVELES.find(x => x.nivel === info.nivel) || NIVELES[0];
+  document.getElementById('levelup-icono').innerHTML = icono(n.icono, 44, 2.5);
+  texto('levelup-titulo', info.titulo || n.titulo);
+  texto('levelup-msg', 'Nuevas misiones y objetos disponibles. Tu racha de ' + (estado.progreso.racha || 0) + ' días sigue viva.');
+  document.getElementById('levelup').classList.remove('oculta');
+  irA('mapa');
+  iconos();
+}
+
+/* ═══════════════ TUTOR IA ═══════════════ */
 async function verificarIA() {
   try {
-    const data = await api('/ia/estado');
-    estado.iaConfigurada = data.configurada;
-    for (const id of ['ia-estado-badge', 'proy-ia-estado-badge']) {
-      const badge = document.getElementById(id);
-      if (badge) {
-        badge.textContent = data.configurada ? '● Activa' : '○ Sin config';
-        badge.className = 'ia-estado ' + (data.configurada ? 'activa' : 'inactiva');
-      }
-    }
-  } catch (e) {
-    estado.iaConfigurada = false;
-  }
+    const d = await api('/ia/estado');
+    estado.iaActiva = !!d.configurada;
+  } catch (e) { estado.iaActiva = false; }
+  texto('tutor-estado', estado.iaActiva ? 'Tu tutor de código' : 'Sin configurar (GEMINI_API_KEY)');
+}
+
+function reiniciarChat() {
+  document.getElementById('chat').innerHTML = '';
+  mensaje('bot', 'Hola. Corré el código cuando quieras y te digo qué veo. Si algo no cierra, preguntame.');
+  api('/ia/historial', 'DELETE').catch(() => {});
+}
+
+function mensaje(rol, texto, cargando) {
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = 'msg' + (rol === 'yo' ? ' yo' : '') + (cargando ? ' cargando' : '');
+  if (cargando) div.id = 'msg-cargando';
+  div.textContent = texto;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function reemplazarCargando(txt) {
+  const el = document.getElementById('msg-cargando');
+  if (el) { el.removeAttribute('id'); el.classList.remove('cargando'); el.textContent = txt; }
+  else mensaje('bot', txt);
+  const chat = document.getElementById('chat');
+  chat.scrollTop = chat.scrollHeight;
 }
 
 async function analizarConIA(codigo, resultado) {
-  if (!estado.iaConfigurada || estado.iaOcupada) return;
-
-  const modulo = estado.moduloActual;
-  agregarMensajeIA('assistant', '...analizando tu código 🔍', true);
-
+  if (estado.iaOcupada) return;
+  estado.iaOcupada = true;
+  mensaje('bot', 'Mirando tu código…', true);
   try {
-    const data = await api('/ia/analizar', 'POST', {
-      codigo,
-      output: resultado.output,
-      exito: resultado.exito,
-      modulo_titulo: modulo?.titulo,
-      modulo_ejercicio: modulo?.ejercicio,
-      lenguaje: estado.lenguaje,
+    const d = await api('/ia/analizar', 'POST', {
+      codigo, output: resultado.output, exito: resultado.exito,
+      modulo_titulo: estado.modulo.titulo, modulo_ejercicio: estado.modulo.ejercicio,
+      lenguaje: estado.lang,
     });
-
-    reemplazarUltimoMensajeIA(data.respuesta);
+    reemplazarCargando(d.respuesta);
   } catch (e) {
-    reemplazarUltimoMensajeIA('(El tutor IA no pudo analizar en este momento)');
-  }
+    reemplazarCargando('No pude analizar el código en este momento.');
+  } finally { estado.iaOcupada = false; }
 }
 
-async function enviarPreguntaIA() {
-  if (estado.iaOcupada) return;
-
-  const input = document.getElementById('ia-input');
-  const mensaje = input.value.trim();
-  if (!mensaje) return;
-
+async function preguntarIA() {
+  const input = document.getElementById('pregunta');
+  const q = input.value.trim();
+  if (!q || estado.iaOcupada) return;
   input.value = '';
-
-  agregarMensajeIA('user', mensaje);
-  agregarMensajeIA('assistant', '...pensando 💭', true);
-
+  mensaje('yo', q);
+  mensaje('bot', 'Pensando…', true);
   estado.iaOcupada = true;
-  document.getElementById('btn-ia-enviar').disabled = true;
-
+  document.getElementById('btn-enviar').disabled = true;
   try {
-    const data = await api('/ia/preguntar', 'POST', {
-      mensaje,
-      contexto_modulo: estado.moduloActual?.titulo,
-      lenguaje: estado.lenguaje,
+    const d = await api('/ia/preguntar', 'POST', {
+      mensaje: q,
+      contexto_modulo: estado.modulo ? estado.modulo.titulo : null,
+      lenguaje: estado.lang,
     });
-    reemplazarUltimoMensajeIA(data.respuesta);
+    reemplazarCargando(d.respuesta);
   } catch (e) {
-    if (e.message.includes('503') || e.message.includes('GEMINI')) {
-      reemplazarUltimoMensajeIA('El tutor IA no está configurado. Configurá la variable GEMINI_API_KEY para activarlo.');
-    } else {
-      reemplazarUltimoMensajeIA('Error conectando con el tutor IA. Intentá de nuevo.');
-    }
+    reemplazarCargando('El tutor no está disponible. Configurá GEMINI_API_KEY para activarlo.');
   } finally {
     estado.iaOcupada = false;
-    document.getElementById('btn-ia-enviar').disabled = false;
+    document.getElementById('btn-enviar').disabled = false;
   }
 }
 
-function iaInputKeydown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    enviarPreguntaIA();
+/* ═══════════════ PROYECTOS ═══════════════ */
+async function cargarProyectos() {
+  if (!estado.proyectos.length) {
+    try { estado.proyectos = await api('/api/proyectos/' + estado.lang); }
+    catch (e) { aviso('No pude cargar los proyectos', true); return; }
   }
-}
+  const hechos = (estado.progreso.proyectos || {})[estado.lang] || [];
+  document.getElementById('proyectos').innerHTML = estado.proyectos
+    .slice().sort((a, b) => a.id - b.id)
+    .map(p => {
+      const dif = p.dificultad.startsWith('Principiante') ? 'facil' : (p.dificultad.startsWith('Intermedio') ? 'media' : 'dura');
+      const hecho = hechos.includes(p.id);
+      return '<article class="card proyecto">' +
+        '<span class="blob dif-' + dif + '"></span>' +
+        '<div class="proyecto-top">' +
+          '<span class="tag dif-' + dif + '">' + escapar(p.dificultad) + '</span>' +
+          '<span class="meta">' + icono('clock', 13) + ' ' + escapar(p.tiempo_estimado) + '</span>' +
+        '</div>' +
+        '<h3>' + escapar(p.titulo) + '</h3>' +
+        '<p class="muted">' + escapar(p.descripcion) + '</p>' +
+        '<div class="proyecto-chips">' + p.conceptos.map(c => '<span class="tag">' + escapar(c) + '</span>').join('') + '</div>' +
+        '<span class="meta">' + icono('footprints', 14) + ' ' + p.pasos.length + ' pasos guiados</span>' +
+        '<div class="proyecto-pie">' +
+          '<span class="proyecto-premio">' + (hecho ? 'Completado' : '+' + p.xp + ' XP') + '</span>' +
+          '<button class="btn btn-primary" data-proyecto="' + p.id + '">Ver el plan</button>' +
+        '</div>' +
+      '</article>';
+    }).join('');
 
-function agregarMensajeIA(role, texto, esCargando = false) {
-  const chat = document.getElementById('ia-chat');
-
-  const div = document.createElement('div');
-  div.className = 'ia-mensaje' + (role === 'user' ? ' usuario' : '') + (esCargando ? ' ia-cargando' : '');
-  if (esCargando) div.id = 'ia-cargando';
-
-  const avatar = document.createElement('span');
-  avatar.className = 'ia-avatar';
-  avatar.textContent = role === 'user' ? '🧑' : '🤖';
-
-  const burbuja = document.createElement('div');
-  burbuja.className = 'ia-burbuja';
-  burbuja.textContent = texto;
-
-  div.appendChild(avatar);
-  div.appendChild(burbuja);
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-function reemplazarUltimoMensajeIA(texto) {
-  const cargando = document.getElementById('ia-cargando');
-  if (cargando) {
-    cargando.id = '';
-    cargando.classList.remove('ia-cargando');
-    const burbuja = cargando.querySelector('.ia-burbuja');
-    if (burbuja) burbuja.textContent = texto;
-  } else {
-    agregarMensajeIA('assistant', texto);
-  }
-  const chat = document.getElementById('ia-chat');
-  chat.scrollTop = chat.scrollHeight;
-}
-
-async function limpiarChatIA() {
-  const chat = document.getElementById('ia-chat');
-  chat.innerHTML = '';
-  agregarMensajeIA('assistant', '¡Hola! Soy tu tutor IA. Corrí tu código y te voy a dar feedback automático. También podés preguntarme cualquier duda sobre el módulo.');
-  try {
-    await api('/ia/historial', 'DELETE');
-  } catch (e) { /* silencioso */ }
-}
-
-/* ═══════════════════════════════════ PROGRESO ════════════════════════════════════════ */
-async function marcarCompletado() {
-  if (!estado.moduloActual) return;
-  await marcarModuloCompletado(estado.moduloActual.id);
-}
-
-async function marcarModuloCompletado(moduloId) {
-  try {
-    const data = await api('/api/progreso/completar', 'POST', {
-      lenguaje: estado.lenguaje,
-      modulo_id: moduloId,
+  document.querySelectorAll('[data-proyecto]').forEach(b => {
+    b.addEventListener('click', () => {
+      const p = estado.proyectos.find(x => x.id === Number(b.dataset.proyecto));
+      aviso(p.titulo + ': ' + p.pasos.length + ' pasos guiados');
     });
-
-    if (data.ya_estaba) {
-      toast('Ya tenías este módulo completado ✓', 'ok');
-      return;
-    }
-
-    const nivelAnterior = estado.progreso.nivel || 1;
-
-    estado.progreso = {
-      ...estado.progreso,
-      [estado.lenguaje]: data.completados,
-      xp: data.xp_total,
-      nivel: data.nivel_info.nivel,
-      nivel_info: data.nivel_info,
-      racha: data.racha,
-      mejor_racha: data.mejor_racha,
-    };
-
-    actualizarUIProgreso();
-    actualizarProgresoModulos();
-    renderizarModulos();
-
-    const btnEditor = document.getElementById('btn-completar-editor');
-    btnEditor.textContent = '✓ Completado';
-    btnEditor.classList.add('ya-completado');
-
-    let msg;
-    if (data.nivel_info.nivel > nivelAnterior) {
-      msg = `🎉 ¡Subiste al nivel ${data.nivel_info.nivel} — ${data.nivel_info.titulo}!`;
-    } else if (data.xp_bonus_racha > 0) {
-      msg = `🔥 ¡Racha ${data.racha} días! +${data.xp_ganado} + ${data.xp_bonus_racha} bonus = +${data.xp_total_ganado} XP`;
-    } else {
-      msg = `⭐ +${data.xp_ganado} XP! Total: ${data.xp_total} XP`;
-    }
-    toast(msg, 'xp');
-
-    hide('modal-overlay');
-    document.body.style.overflow = '';
-    moduloEnModal = null;
-
-  } catch (e) {
-    toast('Error guardando el progreso', 'error');
-  }
+  });
+  iconos();
 }
 
-/* ═══════════════════════════════════ PROYECTOS (catálogo) ═══════════════════════════ */
-function mostrarTabModulos() {
-  document.getElementById('tab-btn-modulos').classList.add('activo');
-  document.getElementById('tab-btn-proyectos').classList.remove('activo');
-  show('vista-modulos');
-  hide('vista-proyectos');
+/* ═══════════════ TIENDA ═══════════════ */
+async function cargarTienda() {
+  try { estado.tienda = await api('/api/tienda'); }
+  catch (e) { aviso('No pude cargar la tienda', true); return; }
+  renderTienda();
 }
 
-async function mostrarTabProyectos() {
-  document.getElementById('tab-btn-proyectos').classList.add('activo');
-  document.getElementById('tab-btn-modulos').classList.remove('activo');
-  hide('vista-modulos');
-  show('vista-proyectos');
+function renderTienda() {
+  const t = estado.tienda;
+  if (!t) return;
+  const xp = t.xp != null ? t.xp : (estado.progreso.xp || 0);
+  texto('tienda-xp', xp + ' XP');
 
-  if (!estado.proyectosCargados) {
-    try {
-      estado.proyectos = await api(`/api/proyectos/${estado.lenguaje}`);
-      estado.proyectosCargados = true;
-    } catch (e) {
-      toast('Error cargando proyectos. Revisá que el servidor esté corriendo.', 'error');
-      return;
-    }
-  }
+  const cats = {};
+  t.items.forEach(i => { (cats[i.categoria] = cats[i.categoria] || []).push(i); });
 
-  renderizarProyectos();
+  document.getElementById('tienda').innerHTML = Object.keys(cats).map(cat =>
+    '<section class="tienda-cat"><h3>' + (NOMBRE_CATEGORIA[cat] || cat) + '</h3><div class="tienda-grid">' +
+    cats[cat].map(i => {
+      const tiene = i.unico && t.inventario.includes(i.id);
+      const alcanza = xp >= i.precio;
+      const clase = tiene ? 'tenes' : (alcanza ? 'comprable' : 'sin-xp');
+      return '<article class="card item' + (!alcanza && !tiene ? ' caro' : '') + '">' +
+        '<span class="item-icono">' + icono(ICONO_ITEM[i.id] || 'package', 22) + '</span>' +
+        '<h4>' + escapar(i.nombre) + '</h4>' +
+        '<p>' + escapar(i.descripcion) + '</p>' +
+        '<span class="lore">' + escapar(i.lore || '') + '</span>' +
+        '<button class="btn ' + clase + '" data-item="' + i.id + '"' + (tiene || !alcanza ? ' disabled' : '') + '>' +
+          '<span>' + (tiene ? 'En tu inventario' : (alcanza ? 'Cambiar' : 'Te falta XP')) + '</span>' +
+          '<span>' + (tiene ? '✓' : i.precio + ' XP') + '</span>' +
+        '</button>' +
+      '</article>';
+    }).join('') + '</div></section>').join('');
+
+  document.querySelectorAll('[data-item]').forEach(b => {
+    b.addEventListener('click', () => comprar(b.dataset.item));
+  });
+  iconos();
 }
 
-function renderizarProyectos() {
-  const lista = document.getElementById('proyectos-lista');
-  lista.innerHTML = '';
-
-  const completados = (estado.progreso.proyectos && estado.progreso.proyectos[estado.lenguaje]) || [];
-  const ordenados = [...estado.proyectos].sort((a, b) => a.id - b.id);
-
-  for (const proyecto of ordenados) {
-    const card = crearCardProyecto(proyecto, completados.includes(proyecto.id));
-    lista.appendChild(card);
-  }
-
-  actualizarProgresoProyectos();
-}
-
-function crearCardProyecto(proyecto, completado) {
-  const card = document.createElement('div');
-  card.className = 'proyecto-card' + (completado ? ' completado' : '');
-
-  const claseDificultad = normalizarDificultad(proyecto.dificultad);
-  const conceptosHtml = proyecto.conceptos.map(c => `<span class="concepto-chip">${c}</span>`).join('');
-
-  card.innerHTML = `
-    <div class="proyecto-card-header">
-      <span class="proyecto-titulo">${proyecto.titulo}</span>
-      <span class="dificultad-badge ${claseDificultad}">${proyecto.dificultad}</span>
-    </div>
-    <p class="proyecto-desc">${proyecto.descripcion}</p>
-    <div class="proyecto-conceptos">${conceptosHtml}</div>
-    <div class="proyecto-footer">
-      <span>⏱ ${proyecto.tiempo_estimado}</span>
-      <span class="proyecto-xp-badge">${completado ? '✓ Completado' : '+' + proyecto.xp + ' XP'}</span>
-    </div>
-  `;
-  card.onclick = () => abrirProyecto(proyecto);
-  return card;
-}
-
-function normalizarDificultad(dificultad) {
-  return dificultad.toLowerCase().replace('+', '').trim();
-}
-
-function actualizarProgresoProyectos() {
-  const completados = (estado.progreso.proyectos && estado.progreso.proyectos[estado.lenguaje]) || [];
-  const total = estado.proyectos.length;
-  const pct = total > 0 ? (completados.length / total) * 100 : 0;
-  const xpGanado = estado.proyectos
-    .filter(p => completados.includes(p.id))
-    .reduce((sum, p) => sum + p.xp, 0);
-
-  setText('proy-completados', completados.length);
-  setText('proy-total', total);
-  setText('proy-xp-ganado', xpGanado);
-  setStyle('proyectos-barra-fill', 'width', pct + '%');
-}
-
-function irAProyectos() {
-  mostrarPantalla('pantalla-modulos');
-  mostrarTabProyectos();
-}
-
-/* ═══════════════════════════════════ PROYECTO GUIADO ═════════════════════════════════ */
-function abrirProyecto(proyecto) {
-  estado.proyectoActual = proyecto;
-  const meta = LANG_META[estado.lenguaje];
-  const claseDificultad = normalizarDificultad(proyecto.dificultad);
-
-  const badge = document.getElementById('proy-dificultad-badge');
-  badge.textContent = proyecto.dificultad;
-  badge.className = 'dificultad-badge ' + claseDificultad;
-
-  setText('proy-titulo-header', proyecto.titulo);
-  setText('proy-objetivo', proyecto.objetivo);
-
-  document.getElementById('proy-requisitos').innerHTML = proyecto.requisitos.map(r => `<li>${r}</li>`).join('');
-  document.getElementById('proy-criterios').innerHTML = proyecto.criterios.map(c => `<li>${c}</li>`).join('');
-  document.getElementById('proy-retos').innerHTML = proyecto.retos_extra.map(r => `<li>${r}</li>`).join('');
-
-  renderizarPasosProyecto(proyecto);
-
-  setText('proy-code-lang-badge', meta.nombre);
-  const editor = document.getElementById('proy-code-editor');
-  editor.placeholder = meta.placeholder;
-  editor.value = '';
-
-  const completados = (estado.progreso.proyectos && estado.progreso.proyectos[estado.lenguaje]) || [];
-  const completado = completados.includes(proyecto.id);
-  const btnCompletar = document.getElementById('btn-completar-proyecto');
-  if (completado) {
-    btnCompletar.textContent = '✓ Proyecto completado';
-    btnCompletar.classList.add('ya-completado');
-  } else {
-    btnCompletar.textContent = '✓ Marcar proyecto completado';
-    btnCompletar.classList.remove('ya-completado');
-  }
-
-  const outputPre = document.getElementById('proy-output-pre');
-  outputPre.textContent = 'El output aparecerá aquí...';
-  outputPre.className = 'output-pre';
-  setText('proy-output-status', '');
-  setText('proy-run-tiempo', '');
-
-  limpiarChatIAProyecto();
-  mostrarPantalla('pantalla-proyecto');
-}
-
-function renderizarPasosProyecto(proyecto) {
-  const cont = document.getElementById('proy-pasos');
-  const clave = `${estado.lenguaje}_${proyecto.id}`;
-  const completados = (estado.progreso.proyectos_pasos && estado.progreso.proyectos_pasos[clave]) || [];
-
-  cont.innerHTML = proyecto.pasos.map((paso, i) => {
-    const hecho = completados.includes(i);
-    return `
-      <div class="proy-paso${hecho ? ' completado' : ''}">
-        <div class="proy-paso-header">
-          <input type="checkbox" class="proy-paso-check" ${hecho ? 'checked' : ''} onclick="togglePasoProyecto(event, ${i})">
-          <div class="proy-paso-titulos">
-            <div class="proy-paso-num">Paso ${i + 1}</div>
-            <div class="proy-paso-titulo">${paso.titulo}</div>
-            <div class="proy-paso-desc">${paso.descripcion}</div>
-            <button class="btn-pista-paso" id="proy-btn-pista-${i}" onclick="togglePistaPaso(${i})">💡 Ver pista</button>
-            <div class="proy-paso-pista oculta" id="proy-pista-${i}">${paso.pista}</div>
-          </div>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-async function togglePasoProyecto(event, index) {
-  event.stopPropagation();
-  const checkbox = event.target;
-  const completado = checkbox.checked;
-  const proyecto = estado.proyectoActual;
-  if (!proyecto) return;
-
-  const pasoEl = checkbox.closest('.proy-paso');
-  pasoEl.classList.toggle('completado', completado);
-
+async function comprar(itemId) {
   try {
-    const data = await api('/api/proyectos/paso', 'POST', {
-      lenguaje: estado.lenguaje,
-      proyecto_id: proyecto.id,
-      paso_index: index,
-      completado,
-    });
-    const clave = `${estado.lenguaje}_${proyecto.id}`;
-    if (!estado.progreso.proyectos_pasos) estado.progreso.proyectos_pasos = {};
-    estado.progreso.proyectos_pasos[clave] = data.pasos_completados;
+    const d = await api('/api/tienda/comprar', 'POST', { item_id: itemId });
+    estado.progreso.xp = d.xp_restante;
+    estado.tienda.xp = d.xp_restante;
+    estado.tienda.inventario = d.inventario;
+    aviso(d.message);
+    renderTienda();
+    actualizarCabecera();
   } catch (e) {
-    checkbox.checked = !completado;
-    pasoEl.classList.toggle('completado', !completado);
-    toast('Error guardando el paso', 'error');
+    aviso(e.message.replace(/^\d+:\s*/, ''), true);
   }
 }
 
-function togglePistaPaso(index) {
-  const pista = document.getElementById('proy-pista-' + index);
-  const btn = document.getElementById('proy-btn-pista-' + index);
-  if (pista.classList.contains('oculta')) {
-    show(pista);
-    btn.textContent = '💡 Ocultar pista';
-  } else {
-    hide(pista);
-    btn.textContent = '💡 Ver pista';
-  }
-}
-
-function limpiarEditorProyecto() {
-  document.getElementById('proy-code-editor').value = '';
-  document.getElementById('proy-code-editor').focus();
-}
-
-function obtenerPasoActualProyecto() {
-  if (!estado.proyectoActual) return 0;
-  const clave = `${estado.lenguaje}_${estado.proyectoActual.id}`;
-  const completados = (estado.progreso.proyectos_pasos && estado.progreso.proyectos_pasos[clave]) || [];
-  for (let i = 0; i < estado.proyectoActual.pasos.length; i++) {
-    if (!completados.includes(i)) return i;
-  }
-  return estado.proyectoActual.pasos.length - 1;
-}
-
-/* ═══════════════════════════════════ EJECUCIÓN Y IA — PROYECTO ═══════════════════════ */
-async function ejecutarCodigoProyecto() {
-  if (estado.corriendoProyecto) return;
-
-  const codigo = document.getElementById('proy-code-editor').value.trim();
-  if (!codigo) {
-    toast('Escribí algo de código primero!', 'error');
-    return;
-  }
-
-  estado.corriendoProyecto = true;
-  const btnRun = document.getElementById('proy-btn-run');
-  btnRun.disabled = true;
-  btnRun.textContent = '⟳ Corriendo...';
-  btnRun.classList.add('corriendo');
-
-  const outputPre = document.getElementById('proy-output-pre');
-  const outputStatus = document.getElementById('proy-output-status');
-  const runTiempo = document.getElementById('proy-run-tiempo');
-
-  outputPre.textContent = 'Ejecutando...';
-  outputPre.className = 'output-pre';
-  outputStatus.textContent = '';
-  outputStatus.className = 'output-status';
-  runTiempo.textContent = '';
-
-  try {
-    const resultado = await api('/api/ejecutar', 'POST', {
-      lenguaje: estado.lenguaje,
-      codigo: codigo,
-    });
-
-    outputPre.textContent = resultado.output;
-    runTiempo.textContent = `${resultado.tiempo}s`;
-
-    if (resultado.exito) {
-      outputPre.className = 'output-pre ok';
-      outputStatus.textContent = '✓ OK';
-      outputStatus.className = 'output-status ok';
-    } else {
-      outputPre.className = 'output-pre error';
-      outputStatus.textContent = '✗ Error';
-      outputStatus.className = 'output-status error';
-    }
-
-    if (estado.iaConfigurada && estado.proyectoActual) {
-      await analizarConIAProyecto(codigo, resultado);
-    }
-
-  } catch (e) {
-    outputPre.textContent = 'Error conectando con el servidor. ¿Está corriendo el backend?';
-    outputPre.className = 'output-pre error';
-    outputStatus.textContent = '✗ Error';
-    outputStatus.className = 'output-status error';
-  } finally {
-    estado.corriendoProyecto = false;
-    btnRun.disabled = false;
-    btnRun.textContent = '▶ Correr';
-    btnRun.classList.remove('corriendo');
-  }
-}
-
-async function analizarConIAProyecto(codigo, resultado) {
-  if (!estado.iaConfigurada || estado.iaOcupadaProyecto) return;
-
-  const proyecto = estado.proyectoActual;
-  const pasoIdx = obtenerPasoActualProyecto();
-  const paso = proyecto.pasos[pasoIdx];
-
-  agregarMensajeIAEn('proy-ia-chat', 'proy-ia-cargando', 'assistant', '...analizando tu código 🔍', true);
-
-  try {
-    const data = await api('/ia/analizar', 'POST', {
-      codigo,
-      output: resultado.output,
-      exito: resultado.exito,
-      modulo_titulo: `Proyecto: ${proyecto.titulo} — Paso ${pasoIdx + 1}: ${paso.titulo}`,
-      modulo_ejercicio: `[PROYECTO GUIADO: guiá con preguntas y pistas graduales, NUNCA des el código completo de la solución] Objetivo del proyecto: ${proyecto.objetivo} — Paso actual: ${paso.descripcion}`,
-      lenguaje: estado.lenguaje,
-    });
-
-    reemplazarUltimoMensajeIAEn('proy-ia-chat', 'proy-ia-cargando', data.respuesta);
-  } catch (e) {
-    reemplazarUltimoMensajeIAEn('proy-ia-chat', 'proy-ia-cargando', '(El mentor IA no pudo analizar en este momento)');
-  }
-}
-
-async function enviarPreguntaIAProyecto() {
-  if (estado.iaOcupadaProyecto) return;
-
-  const input = document.getElementById('proy-ia-input');
-  const mensaje = input.value.trim();
-  if (!mensaje) return;
-
-  input.value = '';
-
-  agregarMensajeIAEn('proy-ia-chat', null, 'user', mensaje);
-  agregarMensajeIAEn('proy-ia-chat', 'proy-ia-cargando', 'assistant', '...pensando 💭', true);
-
-  estado.iaOcupadaProyecto = true;
-  document.getElementById('proy-btn-ia-enviar').disabled = true;
-
-  const proyecto = estado.proyectoActual;
-  let contexto;
-  if (proyecto) {
-    const pasoIdx = obtenerPasoActualProyecto();
-    const paso = proyecto.pasos[pasoIdx];
-    contexto = `[PROYECTO GUIADO: guiá con preguntas y pistas graduales, NUNCA des el código completo de la solución] Proyecto: ${proyecto.titulo} — Paso ${pasoIdx + 1}: ${paso.titulo}`;
-  }
-
-  try {
-    const data = await api('/ia/preguntar', 'POST', {
-      mensaje,
-      contexto_modulo: contexto,
-      lenguaje: estado.lenguaje,
-    });
-    reemplazarUltimoMensajeIAEn('proy-ia-chat', 'proy-ia-cargando', data.respuesta);
-  } catch (e) {
-    if (e.message.includes('503') || e.message.includes('GEMINI')) {
-      reemplazarUltimoMensajeIAEn('proy-ia-chat', 'proy-ia-cargando', 'El mentor IA no está configurado. Configurá la variable GEMINI_API_KEY para activarlo.');
-    } else {
-      reemplazarUltimoMensajeIAEn('proy-ia-chat', 'proy-ia-cargando', 'Error conectando con el mentor IA. Intentá de nuevo.');
-    }
-  } finally {
-    estado.iaOcupadaProyecto = false;
-    document.getElementById('proy-btn-ia-enviar').disabled = false;
-  }
-}
-
-function iaInputKeydownProyecto(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    enviarPreguntaIAProyecto();
-  }
-}
-
-function agregarMensajeIAEn(chatId, cargandoId, role, texto, esCargando = false) {
-  const chat = document.getElementById(chatId);
-
-  const div = document.createElement('div');
-  div.className = 'ia-mensaje' + (role === 'user' ? ' usuario' : '') + (esCargando ? ' ia-cargando' : '');
-  if (esCargando && cargandoId) div.id = cargandoId;
-
-  const avatar = document.createElement('span');
-  avatar.className = 'ia-avatar';
-  avatar.textContent = role === 'user' ? '🧑' : '🤖';
-
-  const burbuja = document.createElement('div');
-  burbuja.className = 'ia-burbuja';
-  burbuja.textContent = texto;
-
-  div.appendChild(avatar);
-  div.appendChild(burbuja);
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-function reemplazarUltimoMensajeIAEn(chatId, cargandoId, texto) {
-  const cargando = document.getElementById(cargandoId);
-  if (cargando) {
-    cargando.removeAttribute('id');
-    cargando.classList.remove('ia-cargando');
-    const burbuja = cargando.querySelector('.ia-burbuja');
-    if (burbuja) burbuja.textContent = texto;
-  } else {
-    agregarMensajeIAEn(chatId, null, 'assistant', texto);
-  }
-  const chat = document.getElementById(chatId);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-async function limpiarChatIAProyecto() {
-  const chat = document.getElementById('proy-ia-chat');
-  chat.innerHTML = '';
-  agregarMensajeIAEn('proy-ia-chat', null, 'assistant', '¡Hola! Soy tu mentor para este proyecto. Te voy a guiar con preguntas, pistas y explicaciones, pero la solución la construís vos. ¡Empecemos!');
-  try {
-    await api('/ia/historial', 'DELETE');
-  } catch (e) { /* silencioso */ }
-}
-
-/* ═══════════════════════════════════ COMPLETAR PROYECTO ══════════════════════════════ */
-async function marcarProyectoCompletado() {
-  if (!estado.proyectoActual) return;
-  const btn = document.getElementById('btn-completar-proyecto');
-  if (btn.classList.contains('ya-completado')) return;
-
-  try {
-    const data = await api('/api/proyectos/completar', 'POST', {
-      lenguaje: estado.lenguaje,
-      proyecto_id: estado.proyectoActual.id,
-    });
-
-    if (data.ya_estaba) {
-      toast('Ya tenías este proyecto completado ✓', 'ok');
-      return;
-    }
-
-    const nivelAnterior = estado.progreso.nivel || 1;
-    const proyectosPrevios = estado.progreso.proyectos || {};
-
-    estado.progreso = {
-      ...estado.progreso,
-      proyectos: { ...proyectosPrevios, [estado.lenguaje]: data.completados },
-      xp: data.xp_total,
-      nivel: data.nivel_info.nivel,
-      nivel_info: data.nivel_info,
-      racha: data.racha,
-      mejor_racha: data.mejor_racha,
-    };
-
-    actualizarUIProgreso();
-
-    btn.textContent = '✓ Proyecto completado';
-    btn.classList.add('ya-completado');
-
-    let msg;
-    if (data.nivel_info.nivel > nivelAnterior) {
-      msg = `🎉 ¡Subiste al nivel ${data.nivel_info.nivel} — ${data.nivel_info.titulo}!`;
-    } else if (data.xp_bonus_racha > 0) {
-      msg = `🔥 ¡Racha ${data.racha} días! +${data.xp_ganado} + ${data.xp_bonus_racha} bonus = +${data.xp_total_ganado} XP`;
-    } else {
-      msg = `⭐ +${data.xp_ganado} XP! Total: ${data.xp_total} XP`;
-    }
-    toast(msg, 'xp');
-
-  } catch (e) {
-    toast('Error guardando el progreso del proyecto', 'error');
-  }
-}
-
-/* ═══════════════════════════════════ PERFIL ══════════════════════════════════════════ */
-function renderizarPerfil() {
+/* ═══════════════ PERFIL ═══════════════ */
+function renderPerfil() {
   const p = estado.progreso;
-  const nivel = p.nivel_info || {};
-  const racha = p.racha || 0;
-  const mejorRacha = p.mejor_racha || 0;
   const xp = p.xp || 0;
+  const nivel = nivelDe(xp);
+  const sig = NIVELES.find(n => n.min > xp);
+  const pct = sig ? Math.round(((xp - nivel.min) / (sig.min - nivel.min)) * 100) : 100;
+  const hechos = ['python', 'javascript', 'cpp'].reduce((s, k) => s + (p[k] || []).length, 0);
+  const total = 45;
+  const objetos = ((estado.tienda || {}).inventario || []).length;
 
-  const totalCompletados = ['python', 'javascript', 'cpp']
-    .reduce((sum, lang) => sum + (p[lang] || []).length, 0);
+  // INSIGNIA: calculadas acá; si mañana las guardás en el backend, leelas de p.insignias.
+  const insignias = [
+    { nombre: 'Primer print', desc: 'Corriste tu primera línea de código', icono: 'play', ok: hechos >= 1 },
+    { nombre: 'Dos días seguidos', desc: 'Volviste al día siguiente', icono: 'calendar-check', ok: (p.mejor_racha || 0) >= 2 },
+    { nombre: 'Bloque completo', desc: 'Terminaste un bloque entero del mapa', icono: 'flag', ok: (p.python || []).length >= 6 },
+    { nombre: 'Cazador de bugs', desc: 'Arreglaste 10 errores por tu cuenta', icono: 'bug', ok: false },
+    { nombre: 'Constructor', desc: 'Terminaste tu primer proyecto largo', icono: 'hammer', ok: Object.keys(p.proyectos || {}).some(k => (p.proyectos[k] || []).length > 0) },
+    { nombre: 'Trilingüe', desc: 'Tocaste los tres lenguajes', icono: 'languages', ok: ['python', 'javascript', 'cpp'].every(k => (p[k] || []).length > 0) },
+  ];
 
-  let xpMeta;
-  if ((nivel.nivel || 1) < 7) {
-    const xpRestante = (nivel.xp_siguiente || 0) - xp;
-    xpMeta = `Faltan ${xpRestante} XP para ${NIVELES_INFO[nivel.nivel] ? NIVELES_INFO[nivel.nivel].titulo : 'el siguiente nivel'}`;
-  } else {
-    xpMeta = '¡Nivel máximo alcanzado!';
-  }
+  document.getElementById('perfil').className = 'perfil';
+  document.getElementById('perfil').innerHTML =
+    '<div class="perfil-hero"><span class="blob blob-sage"></span>' +
+      '<div class="perfil-avatar">' + icono(nivel.icono, 42, 2.5) + '</div>' +
+      '<div class="perfil-datos">' +
+        '<h2>' + nivel.titulo + '</h2>' +
+        '<p class="muted">' + (sig ? 'Te faltan ' + (sig.min - xp) + ' XP para ' + sig.titulo : 'Llegaste al nivel máximo') + '</p>' +
+        '<div class="barra"><div class="barra-fill" style="width:' + pct + '%"></div></div>' +
+      '</div>' +
+      '<div class="perfil-stats">' +
+        stat('flame', p.racha || 0, 'Racha') +
+        stat('check-check', hechos + '/' + total, 'Misiones') +
+        stat('package', objetos, 'Objetos') +
+      '</div>' +
+    '</div>' +
 
-  const bonusStr = rachaBonus(racha);
+    '<section class="perfil-seccion"><h3>Insignias</h3><div class="insignias">' +
+      insignias.map(b =>
+        '<div class="insignia' + (b.ok ? ' ganada' : '') + '">' +
+          '<span class="insignia-medalla">' + icono(b.icono, 24) + '</span>' +
+          '<h4>' + b.nombre + '</h4><p>' + b.desc + '</p>' +
+        '</div>').join('') +
+    '</div></section>' +
 
-  document.getElementById('perfil-contenido').innerHTML = `
-    <div class="perfil-hero">
-      <div class="perfil-avatar-grande">${getNivelIcon(nivel.nivel)}</div>
-      <div class="perfil-nivel-titulo">${nivel.titulo || 'Principiante'}</div>
-      <div class="perfil-xp-total">${xp.toLocaleString()} XP</div>
-      <div class="perfil-xp-barra-wrap">
-        <div class="perfil-xp-barra-fill" style="width:${nivel.progreso_pct || 0}%"></div>
-      </div>
-      <div class="perfil-xp-meta">${xpMeta}</div>
-    </div>
+    '<section class="perfil-seccion"><h3>Camino de niveles</h3><div class="niveles">' +
+      NIVELES.map(n => {
+        const cls = n.nivel === nivel.nivel ? 'actual' : (xp >= n.min ? 'alcanzado' : '');
+        return '<div class="nivel-card ' + cls + '">' +
+          (cls === 'actual' ? '<span class="tag tag-accent">Acá estás</span>' : '') +
+          '<span class="nivel-card-icono">' + icono(n.icono, 21) + '</span>' +
+          '<h4>' + n.titulo + '</h4><span>' + n.min + ' XP</span></div>';
+      }).join('') +
+    '</div></section>' +
 
-    <div class="perfil-stats-grid">
-      <div class="perfil-stat-card${racha >= 2 ? ' racha-card' : ''}">
-        <div class="perfil-stat-icono">🔥</div>
-        <div class="perfil-stat-valor">${racha}</div>
-        <div class="perfil-stat-label">Racha actual</div>
-        ${racha >= 2 ? `<div class="perfil-stat-bonus">+${bonusStr}% XP bonus</div>` : ''}
-      </div>
-      <div class="perfil-stat-card">
-        <div class="perfil-stat-icono">🏆</div>
-        <div class="perfil-stat-valor">${mejorRacha}</div>
-        <div class="perfil-stat-label">Mejor racha</div>
-      </div>
-      <div class="perfil-stat-card">
-        <div class="perfil-stat-icono">📚</div>
-        <div class="perfil-stat-valor">${totalCompletados}<span class="perfil-de-total">/45</span></div>
-        <div class="perfil-stat-label">Módulos</div>
-      </div>
-      <div class="perfil-stat-card">
-        <div class="perfil-stat-icono">⭐</div>
-        <div class="perfil-stat-valor">${nivel.nivel || 1}<span class="perfil-de-total">/7</span></div>
-        <div class="perfil-stat-label">Nivel</div>
-      </div>
-    </div>
+    '<section class="perfil-seccion"><h3>Progreso por lenguaje</h3>' +
+      ['python', 'javascript', 'cpp'].map(k => {
+        const h = (p[k] || []).length, t = LANG[k].total;
+        const pc = Math.round((h / t) * 100);
+        return '<div class="lang-stat"><div class="lang-stat-top">' +
+          '<strong>' + LANG[k].nombre + '</strong><span>' + h + '/' + t + ' misiones · ' + pc + '%</span></div>' +
+          '<div class="barra"><div class="barra-fill sage" style="width:' + pc + '%"></div></div></div>';
+      }).join('') +
+    '</section>';
 
-    <div class="perfil-section">
-      <h3 class="perfil-section-titulo">Progreso por lenguaje</h3>
-      ${renderLangStat('🐍', 'Python', 25, (p.python || []).length)}
-      ${renderLangStat('🟨', 'JavaScript', 10, (p.javascript || []).length)}
-      ${renderLangStat('⚙️', 'C++', 10, (p.cpp || []).length)}
-    </div>
-
-    <div class="perfil-section">
-      <h3 class="perfil-section-titulo">Progreso en proyectos</h3>
-      ${renderLangStat('🐍', 'Python', 5, ((p.proyectos || {}).python || []).length, 'proyectos')}
-      ${renderLangStat('🟨', 'JavaScript', 5, ((p.proyectos || {}).javascript || []).length, 'proyectos')}
-      ${renderLangStat('⚙️', 'C++', 5, ((p.proyectos || {}).cpp || []).length, 'proyectos')}
-    </div>
-
-    <div class="perfil-section">
-      <h3 class="perfil-section-titulo">Mapa de niveles</h3>
-      <div class="niveles-mapa">
-        ${renderNivelesMapa(xp, nivel.nivel || 1)}
-      </div>
-    </div>
-
-    <div class="perfil-section perfil-racha-info">
-      <h3 class="perfil-section-titulo">Bonus de racha diaria</h3>
-      <div class="racha-tabla">
-        ${renderRachaFila('🔥 2+ días', '10% más XP', racha >= 2)}
-        ${renderRachaFila('🔥 5+ días', '25% más XP', racha >= 5)}
-        ${renderRachaFila('🔥 10+ días', '50% más XP', racha >= 10)}
-      </div>
-    </div>
-  `;
+  iconos();
 }
 
-function rachaBonus(racha) {
-  if (racha >= 10) return 50;
-  if (racha >= 5)  return 25;
-  if (racha >= 2)  return 10;
-  return 0;
+function stat(ic, valor, label) {
+  return '<div class="perfil-stat">' + icono(ic, 19) + '<strong>' + valor + '</strong><span>' + label + '</span></div>';
 }
 
-function renderLangStat(icon, nombre, total, completados, unidad = 'módulos') {
-  const pct = total > 0 ? Math.round((completados / total) * 100) : 0;
-  return `
-    <div class="perfil-lang-stat">
-      <div class="perfil-lang-header">
-        <span>${icon} ${nombre}</span>
-        <span class="perfil-lang-nums">${completados}/${total} ${unidad} · ${pct}%</span>
-      </div>
-      <div class="perfil-lang-bar">
-        <div class="perfil-lang-bar-fill" style="width:${pct}%"></div>
-      </div>
-    </div>`;
-}
-
-function renderNivelesMapa(xp, nivelActual) {
-  return NIVELES_INFO.map(n => {
-    const alcanzado = xp >= n.min_xp;
-    const esCurrent = n.nivel === nivelActual;
-    return `
-      <div class="nivel-mapa-item${alcanzado ? ' alcanzado' : ''}${esCurrent ? ' actual' : ''}">
-        ${esCurrent ? '<div class="nivel-mapa-current-badge">Aquí</div>' : ''}
-        <div class="nivel-mapa-icono">${getNivelIcon(n.nivel)}</div>
-        <div class="nivel-mapa-titulo">${n.titulo}</div>
-        <div class="nivel-mapa-xp">${n.min_xp} XP</div>
-      </div>`;
-  }).join('');
-}
-
-function renderRachaFila(label, bonus, activo) {
-  return `
-    <div class="racha-fila${activo ? ' activa' : ''}">
-      <span class="racha-fila-label">${label}</span>
-      <span class="racha-fila-bonus">${bonus}</span>
-      ${activo ? '<span class="racha-fila-check">✓ Activo</span>' : ''}
-    </div>`;
-}
-
-/* ═══════════════════════════════════ UTILIDADES ══════════════════════════════════════ */
+/* ═══════════════ UTILIDADES ═══════════════ */
 async function api(url, method = 'GET', body = null) {
-  const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-  };
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
   if (body) opts.body = JSON.stringify(body);
-
-  const resp = await fetch(url, opts);
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({ detail: resp.statusText }));
-    throw new Error(`${resp.status}: ${err.detail || resp.statusText}`);
+  const r = await fetch(url, opts);
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ detail: r.statusText }));
+    throw new Error(r.status + ': ' + (err.detail || r.statusText));
   }
-  return resp.json();
+  return r.json();
 }
 
-function setText(id, text) {
+function icono(nombre, size = 18, stroke = 2.75) {
+  return '<i data-lucide="' + nombre + '" width="' + size + '" height="' + size + '" stroke-width="' + stroke + '"></i>';
+}
+
+function iconos() {
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function texto(id, txt) {
   const el = document.getElementById(id);
-  if (el) el.textContent = text;
+  if (el) el.textContent = txt;
 }
 
-function setStyle(id, prop, value) {
-  const el = document.getElementById(id);
-  if (el) el.style[prop] = value;
+function escapar(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
-function show(id) {
-  const el = typeof id === 'string' ? document.getElementById(id) : id;
-  if (el) el.classList.remove('oculta');
-}
-
-function hide(id) {
-  const el = typeof id === 'string' ? document.getElementById(id) : id;
-  if (el) el.classList.add('oculta');
-}
-
-let toastTimer = null;
-function toast(msg, tipo = '') {
+let avisoTimer = null;
+function aviso(msg, esError) {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'toast' + (tipo ? ' ' + tipo : '');
-  el.classList.remove('oculta');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.add('oculta'), 3500);
+  el.innerHTML = icono(esError ? 'triangle-alert' : 'sparkles', 16) + ' ' + escapar(msg);
+  el.className = 'toast' + (esError ? ' error' : '');
+  iconos();
+  clearTimeout(avisoTimer);
+  avisoTimer = setTimeout(() => el.classList.add('oculta'), 3200);
 }
