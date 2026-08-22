@@ -609,7 +609,7 @@ function renderPerfil() {
   const sig = NIVELES.find(n => n.min > xp);
   const pct = sig ? Math.round(((xp - nivel.min) / (sig.min - nivel.min)) * 100) : 100;
   const hechos = ['python', 'javascript', 'cpp'].reduce((s, k) => s + (p[k] || []).length, 0);
-  const total = 45;
+  const total = 97; // 37 python + 34 javascript + 26 cpp (módulos del sendero)
   const objetos = ((estado.tienda || {}).inventario || []).length;
 
   // INSIGNIA: calculadas acá; si mañana las guardás en el backend, leelas de p.insignias.
