@@ -136,11 +136,14 @@ const CONSEJOS = [
 const estado = {
   pantalla: 'nexus',
   lang: 'python',
-  progreso: { python: [], javascript: [], cpp: [], xp: 0, nivel: 1, nivel_info: {}, racha: 0, mejor_racha: 0, proyectos: {} },
+  progreso: { python: [], javascript: [], cpp: [], xp: 0, nivel: 1, nivel_info: {}, racha: 0, mejor_racha: 0, proyectos: {}, proyectos_pasos: {} },
   modulos: [],
   sectores: [],
   sector: null,
   modulo: null,
+  proyectosLista: [],
+  proyecto: null,
+  modoIDE: 'nivel', // 'nivel' | 'proyecto'
   tienda: null,
   tab: 'ejercicio',
   vista: 'salida',
@@ -172,7 +175,7 @@ function conectarUI() {
     b.addEventListener('click', () => cambiarLenguaje(b.dataset.lang));
   });
   document.getElementById('btn-consejo').addEventListener('click', nuevoConsejo);
-  document.getElementById('btn-volver-mapa').addEventListener('click', () => irA('nexus'));
+  document.getElementById('btn-volver-mapa').addEventListener('click', cerrarIDE);
   document.getElementById('btn-pista').addEventListener('click', togglePista);
   document.getElementById('btn-limpiar').addEventListener('click', () => {
     const c = document.getElementById('code');
@@ -205,10 +208,24 @@ function conectarUI() {
   document.getElementById('briefing').addEventListener('click', e => {
     if (e.target.id === 'briefing') cerrarBriefing();
   });
-  document.getElementById('brief-empezar').addEventListener('click', abrirEstacion);
+  document.getElementById('brief-empezar').addEventListener('click', () => {
+    cerrarBriefing();
+    abrirIDENivel();
+  });
   document.getElementById('ascenso-cerrar').addEventListener('click', () => {
     document.getElementById('ascenso').classList.add('oculta');
   });
+
+  document.getElementById('estacion-modal').addEventListener('click', e => {
+    if (e.target.id === 'estacion-modal') cerrarIDE();
+  });
+
+  document.getElementById('py-cerrar').addEventListener('click', cerrarProyectoDetalle);
+  document.getElementById('proyecto-detalle').addEventListener('click', e => {
+    if (e.target.id === 'proyecto-detalle') cerrarProyectoDetalle();
+  });
+  document.getElementById('py-abrir-ide').addEventListener('click', abrirIDEProyecto);
+  document.getElementById('py-completar').addEventListener('click', completarProyecto);
 
   const code = document.getElementById('code');
   code.addEventListener('input', sincronizarGutter);
@@ -227,6 +244,8 @@ function conectarUI() {
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     cerrarBriefing();
+    cerrarProyectoDetalle();
+    cerrarIDE();
     document.getElementById('ascenso').classList.add('oculta');
   });
 }
@@ -242,6 +261,7 @@ function irA(pantalla) {
 
   if (pantalla === 'deposito') cargarDeposito();
   if (pantalla === 'perfil') renderPerfil();
+  if (pantalla === 'proyectos') renderProyectos();
   actualizarCabecera();
 }
 
@@ -249,7 +269,7 @@ async function cambiarLenguaje(lang) {
   if (lang === estado.lang) return;
   document.querySelectorAll('#seg-lenguajes .seg-opt').forEach(b => b.classList.toggle('activo', b.dataset.lang === lang));
   await cargarLenguaje(lang);
-  irA('nexus');
+  irA(estado.pantalla === 'proyectos' ? 'proyectos' : 'nexus');
 }
 
 async function cargarLenguaje(lang) {
@@ -260,6 +280,11 @@ async function cargarLenguaje(lang) {
   } catch (e) {
     estado.modulos = [];
     aviso('No pude conectar con el NEXUS. ¿Está corriendo el backend?', true);
+  }
+  try {
+    estado.proyectosLista = await api('/api/proyectos/' + lang);
+  } catch (e) {
+    estado.proyectosLista = [];
   }
   construirSectores();
   renderMapa();
@@ -312,17 +337,17 @@ function actualizarCabecera() {
 
   const activos = estado.sectores.filter(s => s.abierto).length;
   const integridad = integridadGlobal();
-  const m = estado.modulo;
+  const proyectosHechos = (p.proyectos && p.proyectos[estado.lang]) || [];
 
   const titulos = {
-    nexus: 'NEXUS · mapa de sistemas',
-    estacion: m ? (m.codigo + ' · ' + m.titulo) : 'Estación de trabajo',
+    nexus: 'MAPA · sistemas del NEXUS',
+    proyectos: 'PROYECTOS · ' + LANG[estado.lang].nombre,
     perfil: 'Expediente del operador',
     deposito: 'Depósito de requisiciones',
   };
   const subs = {
     nexus: activos + ' activos · ' + (estado.sectores.length - activos) + ' bloqueados · integridad ' + integridad + '%',
-    estacion: m ? ('SECTOR ' + m.sector.sigla + ' · ' + (estado.ultimoError ? 'BUILD DETENIDO · 1 ERROR' : 'ESTACIÓN LISTA')) : 'SIN OPERACIÓN ABIERTA',
+    proyectos: proyectosHechos.length + ' / ' + estado.proyectosLista.length + ' completados',
     perfil: 'RANGO ' + r.nombre + ' · ' + xp.toLocaleString('es-AR') + ' XP · RACHA ' + (p.racha || 0) + ' DÍAS',
     deposito: 'XP DISPONIBLE ' + xp.toLocaleString('es-AR'),
   };
@@ -330,8 +355,7 @@ function actualizarCabecera() {
   texto('pantalla-subtitulo', subs[estado.pantalla]);
 
   const punto = document.getElementById('estado-punto');
-  punto.className = 'estado-punto' + (estado.pantalla === 'estacion' && estado.ultimoError ? ' err'
-    : estado.pantalla === 'nexus' && integridad < 60 ? ' warn' : '');
+  punto.className = 'estado-punto' + (estado.pantalla === 'nexus' && integridad < 60 ? ' warn' : '');
 }
 
 /* ═══════════════ SECTORES ═══════════════ */
@@ -597,12 +621,167 @@ function cerrarBriefing() {
   document.body.style.overflow = '';
 }
 
-/* ═══════════════ ESTACIÓN DE TRABAJO ═══════════════ */
+/* ═══════════════ PROYECTOS ═══════════════ */
 
-function abrirEstacion() {
+function proyectosHechosLang() {
+  return (estado.progreso.proyectos && estado.progreso.proyectos[estado.lang]) || [];
+}
+
+function renderProyectos() {
+  const lista = estado.proyectosLista || [];
+  const hechos = proyectosHechosLang();
+  texto('proyectos-resumen', hechos.length + ' / ' + lista.length + ' COMPLETADOS');
+
+  const cont = document.getElementById('proyectos-lista');
+  if (!lista.length) {
+    cont.innerHTML = '<p class="muted" style="padding:22px">No hay proyectos cargados para este lenguaje todavía.</p>';
+    return;
+  }
+
+  cont.innerHTML = lista.map(py => {
+    const hecho = hechos.includes(py.id);
+    const clave = estado.lang + '_' + py.id;
+    const pasosHechos = ((estado.progreso.proyectos_pasos || {})[clave] || []).length;
+    const totalPasos = (py.pasos || []).length;
+    return '<article class="proyecto-card' + (hecho ? ' hecho' : '') + '" data-proyecto="' + py.id + '">' +
+      '<div class="proyecto-card-top">' +
+        '<span class="tag' + (hecho ? ' tag-ok' : ' tag-acento') + '">' + (hecho ? 'COMPLETADO' : py.dificultad || 'PROYECTO') + '</span>' +
+      '</div>' +
+      '<strong>' + escapar(py.titulo) + '</strong>' +
+      '<p>' + escapar(py.descripcion || '') + '</p>' +
+      '<div class="proyecto-card-pie">' +
+        '<span>' + totalPasos + ' pasos · ' + pasosHechos + ' marcados</span>' +
+        '<span class="acento">+' + py.xp + ' XP</span>' +
+      '</div>' +
+    '</article>';
+  }).join('');
+
+  cont.querySelectorAll('[data-proyecto]').forEach(el => {
+    el.addEventListener('click', () => abrirProyecto(Number(el.dataset.proyecto)));
+  });
+}
+
+function abrirProyecto(id) {
+  const py = (estado.proyectosLista || []).find(p => p.id === id);
+  if (!py) return;
+  estado.proyecto = py;
+
+  const hecho = proyectosHechosLang().includes(py.id);
+  const clave = estado.lang + '_' + py.id;
+  const pasosHechos = new Set((estado.progreso.proyectos_pasos || {})[clave] || []);
+
+  texto('py-dificultad', py.dificultad || '—');
+  texto('py-tiempo', py.tiempo_estimado || '');
+  texto('py-titulo', py.titulo);
+  texto('py-objetivo', py.objetivo || py.descripcion || '');
+  texto('py-recompensa', '+' + py.xp + ' XP');
+
+  document.getElementById('py-pasos').innerHTML = (py.pasos || []).map((paso, i) => {
+    const marcado = pasosHechos.has(i);
+    return '<button class="py-paso' + (marcado ? ' hecho' : '') + '" data-paso="' + i + '">' +
+      '<span class="py-paso-check">' + svg(marcado ? 'check' : 'dashed', 14) + '</span>' +
+      '<span class="py-paso-cuerpo">' +
+        '<span class="py-paso-titulo">' + escapar(paso.titulo) + '</span>' +
+        '<span class="py-paso-desc">' + escapar(paso.descripcion || '') + '</span>' +
+        (paso.pista ? '<span class="py-paso-pista">' + svg('search', 11) + ' ' + escapar(paso.pista) + '</span>' : '') +
+      '</span></button>';
+  }).join('') || '<p class="muted">Este proyecto no tiene pasos detallados.</p>';
+
+  document.getElementById('py-pasos').querySelectorAll('[data-paso]').forEach(b => {
+    b.addEventListener('click', () => toggleProyectoPaso(Number(b.dataset.paso)));
+  });
+
+  document.getElementById('py-conceptos').innerHTML =
+    (py.conceptos || []).map(c => '<span class="chip fuerte">' + escapar(c) + '</span>').join('');
+
+  document.getElementById('py-requisitos').innerHTML =
+    (py.requisitos || []).map(r => '<div>· ' + escapar(r) + '</div>').join('') || 'Sin requisitos previos registrados.';
+
+  const btnCompletar = document.getElementById('py-completar');
+  const todoMarcado = (py.pasos || []).length > 0 && (py.pasos || []).every((_, i) => pasosHechos.has(i));
+  btnCompletar.disabled = hecho || !todoMarcado;
+  btnCompletar.innerHTML = svg('check', 14) + (hecho ? ' YA COMPLETADO' : ' MARCAR COMO COMPLETADO');
+  btnCompletar.title = !hecho && !todoMarcado ? 'Marcá todos los pasos antes de cerrar el proyecto' : '';
+
+  document.getElementById('proyecto-detalle').classList.remove('oculta');
+  document.body.style.overflow = 'hidden';
+  pintarIconos(document.getElementById('proyecto-detalle'));
+}
+
+function cerrarProyectoDetalle() {
+  document.getElementById('proyecto-detalle').classList.add('oculta');
+  document.body.style.overflow = '';
+}
+
+async function toggleProyectoPaso(index) {
+  const py = estado.proyecto;
+  if (!py) return;
+  const clave = estado.lang + '_' + py.id;
+  const actuales = new Set((estado.progreso.proyectos_pasos || {})[clave] || []);
+  const completado = !actuales.has(index);
+
+  try {
+    const d = await api('/api/proyectos/paso', 'POST', {
+      lenguaje: estado.lang, proyecto_id: py.id, paso_index: index, completado: completado,
+    });
+    estado.progreso.proyectos_pasos = Object.assign({}, estado.progreso.proyectos_pasos, { [clave]: d.pasos_completados });
+    abrirProyecto(py.id);
+    renderProyectos();
+  } catch (e) {
+    aviso('No pude guardar el paso', true);
+  }
+}
+
+async function completarProyecto() {
+  const py = estado.proyecto;
+  if (!py) return;
+  try {
+    const data = await api('/api/proyectos/completar', 'POST', { lenguaje: estado.lang, proyecto_id: py.id });
+    if (data.ya_estaba) { aviso('Este proyecto ya estaba completado'); return; }
+
+    const antes = rangoDe(estado.progreso.xp || 0).nivel;
+
+    estado.progreso = Object.assign({}, estado.progreso, {
+      xp: data.xp_total,
+      nivel: data.nivel_info.nivel,
+      nivel_info: data.nivel_info,
+      racha: data.racha,
+      mejor_racha: data.mejor_racha,
+      proyectos: Object.assign({}, estado.progreso.proyectos, { [estado.lang]: data.completados }),
+    });
+
+    aviso('Proyecto completado · +' + (data.xp_total_ganado || data.xp_ganado) + ' XP');
+    cerrarProyectoDetalle();
+    renderProyectos();
+    actualizarCabecera();
+
+    if (data.nivel_info.nivel > antes) mostrarAscenso(data.nivel_info);
+  } catch (e) {
+    aviso('No pude registrar el proyecto en el sistema', true);
+  }
+}
+
+/* ═══════════════ IDE (overlay de trabajo) ═══════════════ */
+
+function mostrarIDE() {
+  document.getElementById('estacion-modal').classList.remove('oculta');
+  document.body.style.overflow = 'hidden';
+  pintarIconos(document.getElementById('estacion-modal'));
+}
+
+function cerrarIDE() {
+  document.getElementById('estacion-modal').classList.add('oculta');
+  document.body.style.overflow = '';
+  if (estado.modoIDE === 'proyecto' && estado.proyecto) {
+    abrirProyecto(estado.proyecto.id);
+  }
+}
+
+function abrirIDENivel() {
   const m = estado.modulo;
   if (!m) return;
-  cerrarBriefing();
+  estado.modoIDE = 'nivel';
+  document.getElementById('btn-completar').classList.remove('oculta');
 
   const cerrada = hechos().includes(m.id);
 
@@ -639,7 +818,7 @@ function abrirEstacion() {
   estado.vista = 'salida';
   cambiarVista('salida');
   document.getElementById('panel-error').classList.add('oculta');
-  terminal([['> estación lista. ejecutá cuando quieras_', 'dim']]);
+  terminal([['> ide listo. ejecutá cuando quieras_', 'dim']]);
   marcarBuild('espera');
 
   const btn = document.getElementById('btn-completar');
@@ -647,7 +826,55 @@ function abrirEstacion() {
   btn.innerHTML = svg('check', 14) + (cerrada ? ' YA CERRADA' : ' VALIDAR');
 
   reiniciarChat();
-  irA('estacion');
+  mostrarIDE();
+}
+
+function abrirIDEProyecto() {
+  const py = estado.proyecto;
+  if (!py) return;
+  estado.modoIDE = 'proyecto';
+  estado.modulo = null;
+  document.getElementById('btn-completar').classList.add('oculta');
+
+  const completado = ((estado.progreso.proyectos || {})[estado.lang] || []).includes(py.id);
+  const clave = estado.lang + '_' + py.id;
+  const pasosHechos = new Set((estado.progreso.proyectos_pasos || {})[clave] || []);
+
+  texto('op-codigo', 'PROYECTO · ' + LANG[estado.lang].nombre);
+  texto('op-titulo', py.titulo);
+  texto('op-contexto', py.objetivo || py.descripcion || '');
+  texto('op-recompensa', '+' + py.xp + ' XP');
+  document.getElementById('op-estado').textContent = completado ? 'COMPLETADO' : 'EN CURSO';
+  document.getElementById('op-estado').className = 'tag ' + (completado ? 'tag-ok' : 'tag-acento');
+
+  document.getElementById('op-objetivos').innerHTML = (py.pasos || [])
+    .map((paso, i) => '<div class="objetivo ' + (pasosHechos.has(i) ? 'hecho' : '') + '">' +
+      svg('dashed', 15) + '<span>' + escapar(paso.titulo) + '</span></div>')
+    .join('') || '<div class="objetivo">' + svg('dashed', 15) + '<span>' + escapar(py.descripcion || '') + '</span></div>';
+
+  document.getElementById('op-conceptos').innerHTML =
+    (py.conceptos || []).map(c => '<span class="chip">' + escapar(c) + '</span>').join('');
+
+  const pistas = (py.pasos || []).map((p, i) => p.pista ? ((i + 1) + ') ' + p.pista) : null).filter(Boolean);
+  texto('op-pista', pistas.length ? pistas.join('  ') : 'Este proyecto no tiene lecturas adicionales: revisá los pasos en el detalle del proyecto.');
+  document.getElementById('op-pista').classList.add('oculta');
+
+  texto('code-archivo', LANG[estado.lang].archivo);
+  texto('code-lang', LANG[estado.lang].ext);
+  const code = document.getElementById('code');
+  code.value = LANG[estado.lang].placeholder;
+  sincronizarGutter();
+
+  estado.ultimoError = null;
+  estado.vista = 'salida';
+  cambiarVista('salida');
+  document.getElementById('panel-error').classList.add('oculta');
+  terminal([['> ide listo. ejecutá cuando quieras_', 'dim']]);
+  marcarBuild('espera');
+
+  document.getElementById('btn-pista').innerHTML = svg('search', 15) + ' VER PISTAS DE LOS PASOS';
+  reiniciarChat();
+  mostrarIDE();
 }
 
 function sincronizarGutter() {
@@ -664,7 +891,8 @@ function sincronizarGutter() {
 function togglePista() {
   const p = document.getElementById('op-pista');
   const oculto = p.classList.toggle('oculta');
-  document.getElementById('btn-pista').innerHTML = svg('search', 15) + (oculto ? ' VER LA LECTURA DE ARIA' : ' OCULTAR LA LECTURA');
+  const etiqueta = estado.modoIDE === 'proyecto' ? 'PISTAS DE LOS PASOS' : 'LA LECTURA DE ARIA';
+  document.getElementById('btn-pista').innerHTML = svg('search', 15) + ' ' + (oculto ? 'VER ' : 'OCULTAR ') + etiqueta;
 }
 
 function marcarBuild(tipo, tiempo) {
@@ -694,7 +922,7 @@ function cambiarVista(vista) {
       ? [['> aria --explain ' + e.codigo, 'dim'], [e.lectura, ''], ['> el error se reporta donde el parser se rinde, no donde se originó', 'acc']]
       : [['> aria --status', 'dim'], [estado.iaActiva ? 'copiloto activo · listo para analizar tu próxima ejecución' : 'copiloto sin configurar (GEMINI_API_KEY)', 'dim']]);
   } else {
-    terminal(estado.ultimaSalida || [['> estación lista. ejecutá cuando quieras_', 'dim']]);
+    terminal(estado.ultimaSalida || [['> ide listo. ejecutá cuando quieras_', 'dim']]);
   }
 }
 
@@ -855,6 +1083,7 @@ async function completarModulo() {
     if (data.nivel_info.nivel > antes) mostrarAscenso(data.nivel_info);
     else {
       aviso('Operación cerrada · +' + (data.xp_total_ganado || data.xp_ganado) + ' XP');
+      cerrarIDE();
       irA('nexus');
     }
   } catch (e) {
@@ -867,6 +1096,9 @@ function mostrarAscenso(info) {
   texto('ascenso-titulo', r.nombre);
   texto('ascenso-msg', 'Tu autorización subió de rango. ' + r.nota +
     '. La continuidad de ' + (estado.progreso.racha || 0) + ' días sigue activa.');
+  document.getElementById('estacion-modal').classList.add('oculta');
+  document.getElementById('proyecto-detalle').classList.add('oculta');
+  document.body.style.overflow = '';
   document.getElementById('ascenso').classList.remove('oculta');
   pintarIconos(document.getElementById('ascenso'));
   irA('nexus');
@@ -887,7 +1119,7 @@ async function verificarIA() {
 function reiniciarChat() {
   document.getElementById('chat').innerHTML = '';
   mensaje('bot', estado.iaActiva
-    ? 'Estación abierta. Ejecutá cuando quieras y te doy la lectura de lo que devuelva el sistema. No escribo la solución por vos.'
+    ? 'IDE abierto. Ejecutá cuando quieras y te doy la lectura de lo que devuelva el sistema. No escribo la solución por vos.'
     : 'Estoy en modo local: puedo darte la lectura de los errores que devuelva el sistema, pero no analizar tu código sin GEMINI_API_KEY.');
   api('/ia/historial', 'DELETE').catch(() => {});
 }

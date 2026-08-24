@@ -87,8 +87,8 @@
       <small>CODE<br />PLAY</small>
     </div>
     <div class="rail-nav">
-      <button class="rail-btn activo" data-pantalla="nexus" data-icono="graph"><span>NEXUS</span></button>
-      <button class="rail-btn" data-pantalla="estacion" data-icono="terminal"><span>ESTACIÓN</span></button>
+      <button class="rail-btn activo" data-pantalla="nexus" data-icono="graph"><span>MAPA</span></button>
+      <button class="rail-btn" data-pantalla="proyectos" data-icono="code"><span>PROYECTOS</span></button>
       <button class="rail-btn" data-pantalla="perfil" data-icono="user"><span>PERFIL</span></button>
       <button class="rail-btn" data-pantalla="deposito" data-icono="package"><span>DEPÓSITO</span></button>
     </div>
@@ -105,7 +105,7 @@
       <div class="topbar-titulo">
         <div class="topbar-h">
           <span class="estado-punto" id="estado-punto"></span>
-          <h1 id="pantalla-titulo">NEXUS · mapa de sistemas</h1>
+          <h1 id="pantalla-titulo">MAPA · sistemas del NEXUS</h1>
         </div>
         <p id="pantalla-subtitulo">CONECTANDO CON EL SISTEMA…</p>
       </div>
@@ -188,109 +188,16 @@
         </div>
       </section>
 
-      <!-- ═══════════ ESTACIÓN ═══════════ -->
-      <section class="screen" id="screen-estacion">
-        <div class="estacion-grid">
-
-          <div class="col-mision">
-            <button class="btn btn-ghost" id="btn-volver-mapa" data-icono="arrowLeft">VOLVER AL MAPA</button>
-
-            <div class="panel">
-              <div class="op-head">
-                <span class="kicker acento" id="op-codigo">OP</span>
-                <span class="tag tag-acento" id="op-estado">EN CURSO</span>
-              </div>
-              <h2 id="op-titulo"></h2>
-              <p class="muted" id="op-contexto"></p>
-              <div class="rule"></div>
-              <span class="kicker">OBJETIVOS</span>
-              <div id="op-objetivos"></div>
-              <button class="btn btn-ghost" id="btn-pista" data-icono="search">VER LA LECTURA DE ARIA</button>
-              <p class="pista oculta" id="op-pista"></p>
+      <!-- ═══════════ PROYECTOS ═══════════ -->
+      <section class="screen" id="screen-proyectos">
+        <div class="proyectos-grid">
+          <div class="panel">
+            <div class="panel-head">
+              <span class="kicker" data-icono="code">PROYECTOS DE SECTOR</span>
+              <span class="panel-head-der" id="proyectos-resumen">0 / 0 COMPLETADOS</span>
             </div>
-
-            <div class="panel">
-              <span class="kicker">CONOCIMIENTO APLICADO</span>
-              <div class="chips" id="op-conceptos"></div>
-              <div class="recompensa">
-                <span class="kicker">RECOMPENSA</span>
-                <span class="acento" id="op-recompensa"></span>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-codigo">
-            <div class="editor">
-              <div class="editor-tabs">
-                <div class="editor-tab activa" data-icono="code"><span id="code-archivo">mision.py</span><i class="dot"></i></div>
-                <div class="editor-tab">spec.test</div>
-                <div class="editor-meta"><span>UTF-8</span><span>LF</span><span id="code-lang">PY</span></div>
-              </div>
-              <div class="editor-cuerpo">
-                <div class="gutter" id="gutter"></div>
-                <textarea id="code" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
-              </div>
-              <div class="editor-pie">
-                <button class="btn btn-primary" id="btn-correr" data-icono="play">EJECUTAR</button>
-                <button class="btn btn-ghost" id="btn-completar" data-icono="check">VALIDAR</button>
-                <button class="btn btn-icono" id="btn-limpiar" title="Limpiar" data-icono="scan"></button>
-                <span class="build" id="build-estado">BUILD EN ESPERA</span>
-              </div>
-            </div>
-
-            <div class="panel panel-terminal">
-              <div class="terminal-head">
-                <span class="kicker" data-icono="terminal">TERMINAL</span>
-                <div class="mini-seg" id="terminal-tabs">
-                  <button class="mini-opt activo" data-vista="salida">SALIDA</button>
-                  <button class="mini-opt" data-vista="error">ERROR</button>
-                  <button class="mini-opt" data-vista="aria">ARIA</button>
-                </div>
-              </div>
-              <pre id="terminal">&gt; sistema listo_</pre>
-            </div>
-
-            <div class="panel panel-error oculta" id="panel-error">
-              <div class="error-head">
-                <span class="kicker" data-icono="warnFill" id="error-tipo">RUNTIME ERROR</span>
-                <span class="error-codigo" id="error-codigo">ERROR CODE: —</span>
-              </div>
-              <div class="error-cuerpo">
-                <div class="error-dato">
-                  <span class="kicker">LÍNEA</span>
-                  <strong id="error-linea">—</strong>
-                </div>
-                <div class="error-dato">
-                  <span class="kicker">TIPO</span>
-                  <code id="error-clase">—</code>
-                </div>
-                <div class="error-dato error-dato-ancho">
-                  <span class="kicker">LECTURA</span>
-                  <p id="error-lectura"></p>
-                </div>
-              </div>
-              <div class="error-pie">
-                <button class="btn btn-error" id="btn-analizar" data-icono="search">ANALIZAR ERROR</button>
-                <button class="btn btn-ghost" id="btn-ir-linea">IR A LA LÍNEA</button>
-                <span class="error-meta" id="error-contador">ERRORES RESUELTOS · 0</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-aria">
-            <div class="aria-head">
-              <div class="aria-icono" data-icono="cpu"></div>
-              <div>
-                <strong>ARIA</strong>
-                <span id="aria-estado">COPILOTO · NO ESCRIBE POR VOS</span>
-              </div>
-              <span class="aria-led" id="aria-led"></span>
-            </div>
-            <div class="chat" id="chat"></div>
-            <div class="chat-input">
-              <input class="input" id="pregunta" placeholder="Preguntá sobre el error…" />
-              <button class="btn btn-icono btn-primary" id="btn-enviar" data-icono="send"></button>
-            </div>
+            <p class="muted" style="padding:2px 4px 14px">Construcciones completas que combinan varios sectores. No tienen validación automática de código: vos marcás los pasos y decidís cuándo el proyecto está listo.</p>
+            <div id="proyectos-lista" class="proyectos-lista"></div>
           </div>
         </div>
       </section>
@@ -349,9 +256,152 @@
       </div>
 
       <div class="dialog-acciones">
-        <button class="btn btn-primary" id="brief-empezar" data-icono="terminal">ABRIR ESTACIÓN</button>
+        <button class="btn btn-primary" id="brief-empezar" data-icono="terminal">ABRIR IDE</button>
         <button class="btn btn-ghost" id="brief-cerrar">MÁS TARDE</button>
         <span class="acento" id="brief-recompensa"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ DETALLE DE PROYECTO ═══════════ -->
+<div class="backdrop oculta" id="proyecto-detalle">
+  <div class="dialog">
+    <div class="dialog-head">
+      <span class="kicker acento" data-icono="code">PROYECTO · <span id="py-dificultad"></span></span>
+      <span class="dialog-head-der" id="py-tiempo"></span>
+    </div>
+    <div class="dialog-cuerpo">
+      <h2 id="py-titulo"></h2>
+      <p class="brief-contexto" id="py-objetivo"></p>
+
+      <div class="brief-cols">
+        <div class="brief-col">
+          <span class="kicker">PASOS DEL PROYECTO</span>
+          <div id="py-pasos" class="py-pasos"></div>
+        </div>
+        <div class="brief-col brief-col-corta">
+          <span class="kicker">VAS A NECESITAR</span>
+          <div class="chips" id="py-conceptos"></div>
+          <span class="kicker">REQUISITOS</span>
+          <div id="py-requisitos" class="muted" style="font-size:12px;line-height:1.7"></div>
+        </div>
+      </div>
+
+      <div class="dialog-acciones">
+        <button class="btn btn-primary" id="py-abrir-ide" data-icono="terminal">ABRIR IDE</button>
+        <button class="btn btn-ghost" id="py-completar" data-icono="check">MARCAR COMO COMPLETADO</button>
+        <button class="btn btn-ghost" id="py-cerrar">CERRAR</button>
+        <span class="acento" id="py-recompensa"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ IDE (se abre solo al trabajar un nivel o proyecto) ═══════════ -->
+<div class="backdrop oculta" id="estacion-modal">
+  <div class="ide-dialog">
+    <div class="estacion-grid">
+
+      <div class="col-mision">
+        <button class="btn btn-ghost" id="btn-volver-mapa" data-icono="arrowLeft">CERRAR IDE</button>
+
+        <div class="panel">
+          <div class="op-head">
+            <span class="kicker acento" id="op-codigo">OP</span>
+            <span class="tag tag-acento" id="op-estado">EN CURSO</span>
+          </div>
+          <h2 id="op-titulo"></h2>
+          <p class="muted" id="op-contexto"></p>
+          <div class="rule"></div>
+          <span class="kicker">OBJETIVOS</span>
+          <div id="op-objetivos"></div>
+          <button class="btn btn-ghost" id="btn-pista" data-icono="search">VER LA LECTURA DE ARIA</button>
+          <p class="pista oculta" id="op-pista"></p>
+        </div>
+
+        <div class="panel">
+          <span class="kicker">CONOCIMIENTO APLICADO</span>
+          <div class="chips" id="op-conceptos"></div>
+          <div class="recompensa">
+            <span class="kicker">RECOMPENSA</span>
+            <span class="acento" id="op-recompensa"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-codigo">
+        <div class="editor">
+          <div class="editor-tabs">
+            <div class="editor-tab activa" data-icono="code"><span id="code-archivo">mision.py</span><i class="dot"></i></div>
+            <div class="editor-tab">spec.test</div>
+            <div class="editor-meta"><span>UTF-8</span><span>LF</span><span id="code-lang">PY</span></div>
+          </div>
+          <div class="editor-cuerpo">
+            <div class="gutter" id="gutter"></div>
+            <textarea id="code" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+          </div>
+          <div class="editor-pie">
+            <button class="btn btn-primary" id="btn-correr" data-icono="play">EJECUTAR</button>
+            <button class="btn btn-ghost" id="btn-completar" data-icono="check">VALIDAR</button>
+            <button class="btn btn-icono" id="btn-limpiar" title="Limpiar" data-icono="scan"></button>
+            <span class="build" id="build-estado">BUILD EN ESPERA</span>
+          </div>
+        </div>
+
+        <div class="panel panel-terminal">
+          <div class="terminal-head">
+            <span class="kicker" data-icono="terminal">TERMINAL</span>
+            <div class="mini-seg" id="terminal-tabs">
+              <button class="mini-opt activo" data-vista="salida">SALIDA</button>
+              <button class="mini-opt" data-vista="error">ERROR</button>
+              <button class="mini-opt" data-vista="aria">ARIA</button>
+            </div>
+          </div>
+          <pre id="terminal">&gt; sistema listo_</pre>
+        </div>
+
+        <div class="panel panel-error oculta" id="panel-error">
+          <div class="error-head">
+            <span class="kicker" data-icono="warnFill" id="error-tipo">RUNTIME ERROR</span>
+            <span class="error-codigo" id="error-codigo">ERROR CODE: —</span>
+          </div>
+          <div class="error-cuerpo">
+            <div class="error-dato">
+              <span class="kicker">LÍNEA</span>
+              <strong id="error-linea">—</strong>
+            </div>
+            <div class="error-dato">
+              <span class="kicker">TIPO</span>
+              <code id="error-clase">—</code>
+            </div>
+            <div class="error-dato error-dato-ancho">
+              <span class="kicker">LECTURA</span>
+              <p id="error-lectura"></p>
+            </div>
+          </div>
+          <div class="error-pie">
+            <button class="btn btn-error" id="btn-analizar" data-icono="search">ANALIZAR ERROR</button>
+            <button class="btn btn-ghost" id="btn-ir-linea">IR A LA LÍNEA</button>
+            <span class="error-meta" id="error-contador">ERRORES RESUELTOS · 0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-aria">
+        <div class="aria-head">
+          <div class="aria-icono" data-icono="cpu"></div>
+          <div>
+            <strong>ARIA</strong>
+            <span id="aria-estado">COPILOTO · NO ESCRIBE POR VOS</span>
+          </div>
+          <span class="aria-led" id="aria-led"></span>
+        </div>
+        <div class="chat" id="chat"></div>
+        <div class="chat-input">
+          <input class="input" id="pregunta" placeholder="Preguntá sobre el error…" />
+          <button class="btn btn-icono btn-primary" id="btn-enviar" data-icono="send"></button>
+        </div>
       </div>
     </div>
   </div>
@@ -364,7 +414,7 @@
     <span class="kicker acento">AUTORIZACIÓN ACTUALIZADA</span>
     <h2 id="ascenso-titulo"></h2>
     <p class="muted" id="ascenso-msg"></p>
-    <button class="btn btn-primary" id="ascenso-cerrar">VOLVER AL NEXUS</button>
+    <button class="btn btn-primary" id="ascenso-cerrar">VOLVER AL MAPA</button>
   </div>
 </div>
 
