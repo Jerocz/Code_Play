@@ -15,42 +15,67 @@
 
 <!-- ═══════════ PANTALLA DE INICIO ═══════════ -->
 <div class="splash" id="splash">
-  <div class="splash-card">
-    <div class="splash-brand" data-icono="terminal"></div>
-    <span class="kicker acento">TERMINAL DE ACCESO</span>
+  <span class="splash-brk tl"></span>
+  <span class="splash-brk tr"></span>
+  <span class="splash-brk bl"></span>
+  <span class="splash-brk br"></span>
+
+  <header class="splash-top">
+    <div class="splash-wordmark">
+      <span class="splash-cp">CP</span>
+      <span class="splash-nombre">CODE<br />PLAY</span>
+    </div>
+    <div class="splash-online"><span class="estado-punto"></span>SISTEMA EN LÍNEA</div>
+  </header>
+
+  <main class="splash-hero">
+    <span class="kicker acento">TERMINAL DE ACCESO · NEXUS</span>
     <h1 class="splash-titulo">CODE PLAY</h1>
-    <p class="splash-sub">NEXUS · sistema de entrenamiento para operadores</p>
+    <p class="splash-sub">Sistema de entrenamiento para operadores</p>
     <p class="splash-desc">
       Aprendé Python, JavaScript y C++ resolviendo incidentes reales dentro del NEXUS.
       Escribís código, lo ejecutás, y ARIA te ayuda a leer lo que el sistema devuelve.
     </p>
 
-    <div class="splash-pasos">
-      <div class="splash-paso">
-        <span class="splash-paso-num">01</span>
-        <div>
-          <strong>Elegí un sector</strong>
-          <p>Cada sector del mapa cubre un tema: variables, loops, funciones, clases…</p>
-        </div>
-      </div>
-      <div class="splash-paso">
-        <span class="splash-paso-num">02</span>
-        <div>
-          <strong>Resolvé la operación</strong>
-          <p>Escribí la solución en la estación de trabajo y ejecutala para ver el resultado real.</p>
-        </div>
-      </div>
-      <div class="splash-paso">
-        <span class="splash-paso-num">03</span>
-        <div>
-          <strong>Subí de rango</strong>
-          <p>Ganá XP, estabilizá sectores nuevos y ascendé de NOVATO a ARCHITECT.</p>
-        </div>
-      </div>
+    <div class="splash-langs">
+      <span class="chip fuerte">PYTHON</span>
+      <span class="chip fuerte">JAVASCRIPT</span>
+      <span class="chip fuerte">C++</span>
     </div>
 
     <button class="btn btn-primary btn-splash" id="btn-splash-empezar" data-icono="play">ENTRAR AL NEXUS</button>
+    <p class="splash-continuar oculta" id="splash-continuar"></p>
+  </main>
+
+  <div class="splash-pasos">
+    <div class="splash-paso">
+      <span class="splash-paso-num">01</span>
+      <div>
+        <strong>Elegí un sector</strong>
+        <p>Cada sector del mapa cubre un tema: variables, loops, funciones, clases…</p>
+      </div>
+    </div>
+    <div class="splash-paso">
+      <span class="splash-paso-num">02</span>
+      <div>
+        <strong>Resolvé la operación</strong>
+        <p>Escribí la solución en la estación de trabajo y ejecutala para ver el resultado real.</p>
+      </div>
+    </div>
+    <div class="splash-paso">
+      <span class="splash-paso-num">03</span>
+      <div>
+        <strong>Subí de rango</strong>
+        <p>Ganá XP, estabilizá sectores nuevos y ascendé de NOVATO a ARCHITECT.</p>
+      </div>
+    </div>
   </div>
+
+  <footer class="splash-footer">
+    <span>NEXUS-7 · BUILD ESTABLE</span>
+    <span>7 RANGOS · NOVATO → ARCHITECT</span>
+    <span>ARIA · COPILOTO IA</span>
+  </footer>
 </div>
 
 <div class="app oculta" id="app">

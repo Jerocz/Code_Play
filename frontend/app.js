@@ -270,6 +270,20 @@ async function cargarLenguaje(lang) {
 
 async function cargarProgreso() {
   try { estado.progreso = await api('/api/progreso'); } catch (e) { /* offline */ }
+  actualizarSplashContinuar();
+}
+
+function actualizarSplashContinuar() {
+  const el = document.getElementById('splash-continuar');
+  if (!el) return;
+  const xp = estado.progreso.xp || 0;
+  if (xp > 0) {
+    const r = rangoDe(xp);
+    texto('splash-continuar', 'Continuás como ' + r.nombre + ' · ' + xp.toLocaleString('es-AR') + ' XP');
+    el.classList.remove('oculta');
+  } else {
+    el.classList.add('oculta');
+  }
 }
 
 function hechos() { return estado.progreso[estado.lang] || []; }
