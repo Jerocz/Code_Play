@@ -3,44 +3,86 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Code Play — Aprendé a programar</title>
+  <title>Code Play — NEXUS</title>
   <link rel="stylesheet" href="/static/styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <script src="https://unpkg.com/lucide@0.454.0/dist/umd/lucide.min.js" defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 </head>
 <body>
 
-<div class="app">
+<canvas id="fondo" aria-hidden="true"></canvas>
 
-  <!-- ═══════════ RAIL DE NAVEGACIÓN ═══════════ -->
-  <nav class="rail">
-    <div class="rail-brand">C</div>
-    <div class="rail-nav">
-      <button class="rail-btn activo" data-pantalla="mapa">
-        <i data-lucide="map" width="21" height="21" stroke-width="2.75"></i><span>Mapa</span>
-      </button>
-      <button class="rail-btn" data-pantalla="proyectos">
-        <i data-lucide="hammer" width="21" height="21" stroke-width="2.75"></i><span>Proyectos</span>
-      </button>
-      <button class="rail-btn" data-pantalla="tienda">
-        <i data-lucide="shopping-basket" width="21" height="21" stroke-width="2.75"></i><span>Tienda</span>
-      </button>
-      <button class="rail-btn" data-pantalla="perfil">
-        <i data-lucide="user-round" width="21" height="21" stroke-width="2.75"></i><span>Perfil</span>
-      </button>
+<!-- ═══════════ PANTALLA DE INICIO ═══════════ -->
+<div class="splash" id="splash">
+  <div class="splash-card">
+    <div class="splash-brand" data-icono="terminal"></div>
+    <span class="kicker acento">TERMINAL DE ACCESO</span>
+    <h1 class="splash-titulo">CODE PLAY</h1>
+    <p class="splash-sub">NEXUS · sistema de entrenamiento para operadores</p>
+    <p class="splash-desc">
+      Aprendé Python, JavaScript y C++ resolviendo incidentes reales dentro del NEXUS.
+      Escribís código, lo ejecutás, y ARIA te ayuda a leer lo que el sistema devuelve.
+    </p>
+
+    <div class="splash-pasos">
+      <div class="splash-paso">
+        <span class="splash-paso-num">01</span>
+        <div>
+          <strong>Elegí un sector</strong>
+          <p>Cada sector del mapa cubre un tema: variables, loops, funciones, clases…</p>
+        </div>
+      </div>
+      <div class="splash-paso">
+        <span class="splash-paso-num">02</span>
+        <div>
+          <strong>Resolvé la operación</strong>
+          <p>Escribí la solución en la estación de trabajo y ejecutala para ver el resultado real.</p>
+        </div>
+      </div>
+      <div class="splash-paso">
+        <span class="splash-paso-num">03</span>
+        <div>
+          <strong>Subí de rango</strong>
+          <p>Ganá XP, estabilizá sectores nuevos y ascendé de NOVATO a ARCHITECT.</p>
+        </div>
+      </div>
     </div>
-    <button class="rail-avatar" data-pantalla="perfil">J</button>
+
+    <button class="btn btn-primary btn-splash" id="btn-splash-empezar" data-icono="play">ENTRAR AL NEXUS</button>
+  </div>
+</div>
+
+<div class="app oculta" id="app">
+
+  <!-- ═══════════ RAIL ═══════════ -->
+  <nav class="rail">
+    <div class="rail-brand">
+      <span>CP</span>
+      <small>CODE<br />PLAY</small>
+    </div>
+    <div class="rail-nav">
+      <button class="rail-btn activo" data-pantalla="nexus" data-icono="graph"><span>NEXUS</span></button>
+      <button class="rail-btn" data-pantalla="estacion" data-icono="terminal"><span>ESTACIÓN</span></button>
+      <button class="rail-btn" data-pantalla="perfil" data-icono="user"><span>PERFIL</span></button>
+      <button class="rail-btn" data-pantalla="deposito" data-icono="package"><span>DEPÓSITO</span></button>
+    </div>
+    <button class="rail-rango" data-pantalla="perfil">
+      <span class="rail-rango-num" id="rail-nivel">01</span>
+      <small id="rail-rango">NOVATO</small>
+    </button>
   </nav>
 
   <div class="main">
 
-    <!-- ═══════════ BARRA SUPERIOR ═══════════ -->
+    <!-- ═══════════ TOPBAR ═══════════ -->
     <header class="topbar">
       <div class="topbar-titulo">
-        <h1 id="pantalla-titulo">El camino de Python</h1>
-        <p id="pantalla-subtitulo">Cargando tu progreso…</p>
+        <div class="topbar-h">
+          <span class="estado-punto" id="estado-punto"></span>
+          <h1 id="pantalla-titulo">NEXUS · mapa de sistemas</h1>
+        </div>
+        <p id="pantalla-subtitulo">CONECTANDO CON EL SISTEMA…</p>
       </div>
 
       <div class="seg" id="seg-lenguajes">
@@ -49,202 +91,255 @@
         <button class="seg-opt" data-lang="cpp">C++</button>
       </div>
 
-      <div class="pill pill-sage">
-        <i data-lucide="flame" width="17" height="17" stroke-width="2.75"></i>
-        <strong id="hud-racha">0</strong><span>días</span>
+      <div class="pill" data-icono="pulse">
+        <strong id="hud-racha">0</strong><span>DÍAS</span>
       </div>
-
-      <div class="pill pill-terra">
-        <i data-lucide="gem" width="17" height="17" stroke-width="2.75"></i>
+      <div class="pill" data-icono="lightning">
         <strong id="hud-xp">0</strong><span>XP</span>
       </div>
 
-      <div class="nivel-hud">
-        <div class="nivel-hud-icono" id="hud-nivel-icono"></div>
-        <div class="nivel-hud-barra">
-          <div class="nivel-hud-fila">
-            <span id="hud-nivel-titulo">Principiante</span>
-            <span id="hud-nivel-falta"></span>
-          </div>
-          <div class="barra"><div class="barra-fill" id="hud-nivel-fill"></div></div>
+      <div class="rango-hud">
+        <div class="rango-hud-fila">
+          <span id="hud-rango">NOVATO · LVL 01</span>
+          <span id="hud-falta"></span>
         </div>
+        <div class="barra"><div class="barra-fill acento" id="hud-fill"></div></div>
       </div>
     </header>
 
-    <!-- ═══════════ PANTALLAS ═══════════ -->
     <main id="pantallas">
 
-      <section class="screen activa" id="screen-mapa">
-        <div class="mapa-grid">
-          <div class="sendero-wrap">
-            <span class="blob blob-sage"></span>
-            <span class="blob blob-terra"></span>
-            <div class="sendero" id="sendero"></div>
+      <!-- ═══════════ NEXUS ═══════════ -->
+      <section class="screen activa" id="screen-nexus">
+        <div class="nexus-grid">
+
+          <div class="nexus-col">
+            <div class="panel mapa-panel">
+              <div class="panel-head">
+                <span class="kicker" data-icono="graph">MAPA DE SISTEMAS · NEXUS</span>
+                <span class="panel-head-der" id="mapa-integridad">INTEGRIDAD GLOBAL 0%</span>
+              </div>
+              <div class="mapa" id="mapa">
+                <svg class="mapa-svg" id="mapa-svg" viewBox="0 0 900 520" preserveAspectRatio="none"></svg>
+                <div class="mapa-nodos" id="mapa-nodos"></div>
+              </div>
+            </div>
+
+            <div class="hud-fila" id="hud-mapa"></div>
           </div>
 
-          <aside class="lateral">
-            <div class="companero">
-              <div class="pip" aria-hidden="true">
-                <span class="pip-cuerpo"></span><span class="pip-brote"></span>
-                <span class="pip-ojo pip-ojo-i"></span><span class="pip-ojo pip-ojo-d"></span>
-                <span class="pip-boca"></span>
+          <aside class="nexus-lateral">
+            <div class="panel">
+              <div class="sector-head">
+                <span class="kicker acento" id="sector-codigo">S-01</span>
+                <h2 id="sector-titulo">—</h2>
+                <p class="muted" id="sector-resumen"></p>
               </div>
-              <div class="companero-texto">
-                <h3 id="pip-nombre">Pip</h3>
-                <p id="pip-consejo"></p>
-                <button class="btn btn-ghost" id="btn-consejo">Otro consejo</button>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-kicker"><i data-lucide="target" width="16" height="16" stroke-width="2.75"></i> Desafío de hoy</div>
-              <h3 id="desafio-titulo">Dos misiones seguidas</h3>
-              <p class="muted" id="desafio-desc"></p>
-              <div class="barra"><div class="barra-fill sage" id="desafio-fill"></div></div>
-              <div class="card-pie">
-                <span class="muted" id="desafio-progreso">0 de 2 hechas</span>
-                <strong class="terra">+120 XP</strong>
+              <div class="sector-ops">
+                <span class="kicker">OPERACIONES DEL SECTOR</span>
+                <div id="operaciones"></div>
               </div>
             </div>
 
-            <div class="card">
-              <div class="card-kicker"><i data-lucide="trophy" width="16" height="16" stroke-width="2.75"></i> Liga de la semana</div>
-              <div id="ranking"></div>
+            <div class="panel">
+              <span class="kicker" data-icono="target">DIRECTIVA DIARIA</span>
+              <div class="directiva-titulo" id="directiva-titulo">Cerrar dos operaciones sin abrir la solución</div>
+              <div class="barra"><div class="barra-fill acento" id="directiva-fill"></div></div>
+              <div class="directiva-pie">
+                <span id="directiva-progreso">0 / 2 CERRADAS</span>
+                <span class="acento">+120 XP</span>
+              </div>
+            </div>
+
+            <div class="panel panel-aria">
+              <div class="aria-icono" data-icono="cpu"></div>
+              <div class="aria-texto">
+                <span class="kicker acento" id="aria-nombre">ARIA · COPILOTO DE SISTEMA</span>
+                <p id="aria-consejo"></p>
+                <button class="link-btn" id="btn-consejo">OTRA LECTURA →</button>
+              </div>
             </div>
           </aside>
         </div>
       </section>
 
-      <section class="screen" id="screen-editor">
-        <div class="editor-grid">
+      <!-- ═══════════ ESTACIÓN ═══════════ -->
+      <section class="screen" id="screen-estacion">
+        <div class="estacion-grid">
+
           <div class="col-mision">
-            <button class="btn btn-secondary" id="btn-volver-mapa">
-              <i data-lucide="arrow-left" width="15" height="15" stroke-width="2.75"></i> Volver al mapa
-            </button>
-            <div class="card">
-              <span class="tag tag-accent" id="editor-mision-num">Misión</span>
-              <h2 id="editor-titulo"></h2>
-              <p class="prosa" id="editor-teoria"></p>
+            <button class="btn btn-ghost" id="btn-volver-mapa" data-icono="arrowLeft">VOLVER AL MAPA</button>
+
+            <div class="panel">
+              <div class="op-head">
+                <span class="kicker acento" id="op-codigo">OP</span>
+                <span class="tag tag-acento" id="op-estado">EN CURSO</span>
+              </div>
+              <h2 id="op-titulo"></h2>
+              <p class="muted" id="op-contexto"></p>
+              <div class="rule"></div>
+              <span class="kicker">OBJETIVOS</span>
+              <div id="op-objetivos"></div>
+              <button class="btn btn-ghost" id="btn-pista" data-icono="search">VER LA LECTURA DE ARIA</button>
+              <p class="pista oculta" id="op-pista"></p>
             </div>
-            <div class="card card-sage">
-              <div class="card-kicker sage"><i data-lucide="target" width="16" height="16" stroke-width="2.75"></i> Objetivo</div>
-              <p class="prosa" id="editor-ejercicio"></p>
-              <button class="btn btn-secondary" id="btn-pista">
-                <i data-lucide="lightbulb" width="15" height="15" stroke-width="2.75"></i> Ver una pista
-              </button>
-              <p class="pista oculta" id="editor-pista"></p>
+
+            <div class="panel">
+              <span class="kicker">CONOCIMIENTO APLICADO</span>
+              <div class="chips" id="op-conceptos"></div>
+              <div class="recompensa">
+                <span class="kicker">RECOMPENSA</span>
+                <span class="acento" id="op-recompensa"></span>
+              </div>
             </div>
           </div>
 
           <div class="col-codigo">
-            <div class="code-panel">
-              <div class="code-head">
-                <span class="code-dot"></span>
-                <span id="code-archivo">mision.py</span>
-                <button class="icon-btn" id="btn-limpiar" title="Limpiar">
-                  <i data-lucide="eraser" width="16" height="16" stroke-width="2.75"></i>
-                </button>
+            <div class="editor">
+              <div class="editor-tabs">
+                <div class="editor-tab activa" data-icono="code"><span id="code-archivo">mision.py</span><i class="dot"></i></div>
+                <div class="editor-tab">spec.test</div>
+                <div class="editor-meta"><span>UTF-8</span><span>LF</span><span id="code-lang">PY</span></div>
               </div>
-              <textarea id="code" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
-              <div class="code-pie">
-                <button class="btn btn-primary" id="btn-correr">
-                  <i data-lucide="play" width="16" height="16" stroke-width="2.75"></i> Correr
-                </button>
-                <button class="btn btn-sage" id="btn-completar">
-                  <i data-lucide="check" width="16" height="16" stroke-width="2.75"></i> Reclamar recompensa
-                </button>
-                <span class="tiempo" id="run-tiempo"></span>
+              <div class="editor-cuerpo">
+                <div class="gutter" id="gutter"></div>
+                <textarea id="code" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+              </div>
+              <div class="editor-pie">
+                <button class="btn btn-primary" id="btn-correr" data-icono="play">EJECUTAR</button>
+                <button class="btn btn-ghost" id="btn-completar" data-icono="check">VALIDAR</button>
+                <button class="btn btn-icono" id="btn-limpiar" title="Limpiar" data-icono="scan"></button>
+                <span class="build" id="build-estado">BUILD EN ESPERA</span>
               </div>
             </div>
 
-            <div class="card">
-              <div class="consola-head">
-                <span class="card-kicker">Consola</span>
-                <span class="tag" id="consola-estado">En espera</span>
+            <div class="panel panel-terminal">
+              <div class="terminal-head">
+                <span class="kicker" data-icono="terminal">TERMINAL</span>
+                <div class="mini-seg" id="terminal-tabs">
+                  <button class="mini-opt activo" data-vista="salida">SALIDA</button>
+                  <button class="mini-opt" data-vista="error">ERROR</button>
+                  <button class="mini-opt" data-vista="aria">ARIA</button>
+                </div>
               </div>
-              <pre id="consola">Todavía no corriste nada.</pre>
+              <pre id="terminal">&gt; sistema listo_</pre>
+            </div>
+
+            <div class="panel panel-error oculta" id="panel-error">
+              <div class="error-head">
+                <span class="kicker" data-icono="warnFill" id="error-tipo">RUNTIME ERROR</span>
+                <span class="error-codigo" id="error-codigo">ERROR CODE: —</span>
+              </div>
+              <div class="error-cuerpo">
+                <div class="error-dato">
+                  <span class="kicker">LÍNEA</span>
+                  <strong id="error-linea">—</strong>
+                </div>
+                <div class="error-dato">
+                  <span class="kicker">TIPO</span>
+                  <code id="error-clase">—</code>
+                </div>
+                <div class="error-dato error-dato-ancho">
+                  <span class="kicker">LECTURA</span>
+                  <p id="error-lectura"></p>
+                </div>
+              </div>
+              <div class="error-pie">
+                <button class="btn btn-error" id="btn-analizar" data-icono="search">ANALIZAR ERROR</button>
+                <button class="btn btn-ghost" id="btn-ir-linea">IR A LA LÍNEA</button>
+                <span class="error-meta" id="error-contador">ERRORES RESUELTOS · 0</span>
+              </div>
             </div>
           </div>
 
-          <div class="col-tutor">
-            <div class="tutor-head">
-              <div class="pip pip-mini" aria-hidden="true">
-                <span class="pip-cuerpo"></span>
-                <span class="pip-ojo pip-ojo-i"></span><span class="pip-ojo pip-ojo-d"></span>
-              </div>
+          <div class="col-aria">
+            <div class="aria-head">
+              <div class="aria-icono" data-icono="cpu"></div>
               <div>
-                <strong id="tutor-nombre">Pip</strong>
-                <span class="muted" id="tutor-estado">Tu tutor de código</span>
+                <strong>ARIA</strong>
+                <span id="aria-estado">COPILOTO · NO ESCRIBE POR VOS</span>
               </div>
+              <span class="aria-led" id="aria-led"></span>
             </div>
             <div class="chat" id="chat"></div>
             <div class="chat-input">
-              <input class="input" id="pregunta" placeholder="Preguntá lo que quieras…" />
-              <button class="btn btn-primary icon-only" id="btn-enviar">
-                <i data-lucide="send" width="16" height="16" stroke-width="2.75"></i>
-              </button>
+              <input class="input" id="pregunta" placeholder="Preguntá sobre el error…" />
+              <button class="btn btn-icono btn-primary" id="btn-enviar" data-icono="send"></button>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="screen" id="screen-proyectos">
-        <div class="grid-cards" id="proyectos"></div>
-      </section>
-
-      <section class="screen" id="screen-tienda">
-        <div class="tienda-hero">
-          <div class="tienda-hero-icono"><i data-lucide="shopping-basket" width="27" height="27" stroke-width="2.75"></i></div>
-          <div>
-            <h2>Puesto de intercambio</h2>
-            <p>Cambiá XP por temas, títulos y objetos que te ayudan a seguir la racha.</p>
-          </div>
-          <div class="pill pill-grande"><i data-lucide="gem" width="18" height="18" stroke-width="2.75"></i><strong id="tienda-xp">0 XP</strong></div>
-        </div>
-        <div id="tienda"></div>
-      </section>
-
+      <!-- ═══════════ PERFIL ═══════════ -->
       <section class="screen" id="screen-perfil">
         <div id="perfil"></div>
+      </section>
+
+      <!-- ═══════════ DEPÓSITO ═══════════ -->
+      <section class="screen" id="screen-deposito">
+        <div class="deposito-hero">
+          <div class="deposito-icono" data-icono="package"></div>
+          <div>
+            <h2>Depósito de requisiciones</h2>
+            <p>Cambiá XP por herramientas de trabajo: nada acá resuelve el problema por vos, todo te da mejor información.</p>
+          </div>
+          <div class="pill pill-grande" data-icono="lightning"><strong id="deposito-xp">0 XP</strong></div>
+        </div>
+        <div id="deposito"></div>
       </section>
     </main>
   </div>
 </div>
 
-<!-- ═══════════ DIÁLOGO DE MISIÓN ═══════════ -->
-<div class="backdrop oculta" id="dialogo">
+<!-- ═══════════ BRIEFING ═══════════ -->
+<div class="backdrop oculta" id="briefing">
   <div class="dialog">
-    <span class="blob blob-terra dialog-blob"></span>
-    <div class="dialog-top">
-      <span class="tag tag-sage" id="dlg-bloque"></span>
-      <span class="tag tag-accent" id="dlg-xp"></span>
+    <div class="dialog-head">
+      <span class="kicker acento" data-icono="warnFill">INCIDENTE ABIERTO · <span id="brief-codigo"></span></span>
+      <span class="dialog-head-der" id="brief-prioridad">PRIORIDAD MEDIA</span>
     </div>
-    <h2 id="dlg-titulo"></h2>
-    <p class="muted" id="dlg-desc"></p>
-    <div class="dialog-tabs">
-      <button class="btn btn-secondary activo" data-tab="teoria">Cómo funciona</button>
-      <button class="btn btn-secondary" data-tab="ejercicio">Tu misión</button>
-      <button class="btn btn-secondary" data-tab="ejemplo">Ejemplo</button>
-    </div>
-    <div class="dialog-cuerpo"><pre id="dlg-contenido"></pre></div>
-    <div class="dialog-acciones">
-      <button class="btn btn-primary" id="dlg-empezar">
-        <i data-lucide="play" width="16" height="16" stroke-width="2.75"></i> Empezar la misión
-      </button>
-      <button class="btn btn-secondary" id="dlg-cerrar">Ahora no</button>
+    <div class="dialog-cuerpo">
+      <h2 id="brief-titulo"></h2>
+      <p class="brief-contexto" id="brief-contexto"></p>
+
+      <div class="brief-datos" id="brief-datos"></div>
+
+      <div class="brief-cols">
+        <div class="brief-col">
+          <span class="kicker">LO QUE EL SISTEMA NECESITA</span>
+          <div id="brief-objetivos"></div>
+          <div class="brief-tabs" id="brief-tabs">
+            <button class="mini-opt activo" data-tab="ejercicio">LA OPERACIÓN</button>
+            <button class="mini-opt" data-tab="teoria">CÓMO FUNCIONA</button>
+            <button class="mini-opt" data-tab="ejemplo">REFERENCIA</button>
+          </div>
+          <pre id="brief-contenido"></pre>
+        </div>
+        <div class="brief-col brief-col-corta">
+          <span class="kicker">VAS A NECESITAR</span>
+          <div class="chips" id="brief-conceptos"></div>
+          <span class="kicker">SI NO SE RESUELVE</span>
+          <p class="muted" id="brief-consecuencia"></p>
+        </div>
+      </div>
+
+      <div class="dialog-acciones">
+        <button class="btn btn-primary" id="brief-empezar" data-icono="terminal">ABRIR ESTACIÓN</button>
+        <button class="btn btn-ghost" id="brief-cerrar">MÁS TARDE</button>
+        <span class="acento" id="brief-recompensa"></span>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ═══════════ SUBIDA DE NIVEL ═══════════ -->
-<div class="backdrop oculta" id="levelup">
-  <div class="levelup-rays"></div>
-  <div class="levelup-card">
-    <div class="levelup-icono" id="levelup-icono"></div>
-    <span class="levelup-kicker">Subiste de nivel</span>
-    <h2 id="levelup-titulo"></h2>
-    <p class="muted" id="levelup-msg"></p>
-    <button class="btn btn-primary" id="levelup-cerrar">Seguir jugando</button>
+<!-- ═══════════ ASCENSO DE RANGO ═══════════ -->
+<div class="backdrop oculta" id="ascenso">
+  <div class="ascenso-card">
+    <div class="ascenso-icono" data-icono="shield"></div>
+    <span class="kicker acento">AUTORIZACIÓN ACTUALIZADA</span>
+    <h2 id="ascenso-titulo"></h2>
+    <p class="muted" id="ascenso-msg"></p>
+    <button class="btn btn-primary" id="ascenso-cerrar">VOLVER AL NEXUS</button>
   </div>
 </div>
 
