@@ -1,26 +1,64 @@
 {
   "python": [
-    1
+    1,
+    2,
+    4,
+    3,
+    5,
+    6
   ],
-  "javascript": [
-    1
-  ],
+  "javascript": [],
   "cpp": [],
-  "xp": 250,
-  "nivel": 2,
-  "racha": 1,
-  "mejor_racha": 1,
-  "ultima_actividad": "2026-08-17",
+  "xp": 8430,
+  "nivel": 7,
+  "racha": 3,
+  "mejor_racha": 3,
+  "ultima_actividad": "2026-09-01",
   "proyectos": {
-    "python": [
-      1
-    ],
+    "python": [],
     "javascript": [],
     "cpp": []
   },
-  "proyectos_pasos": {
-    "python_1": [
-      0
-    ]
-  }
+  "proyectos_pasos": {},
+  "inventario": [
+    "titulo_bug_hunter",
+    "tema_matrix",
+    "tema_oceano",
+    "tema_fuego",
+    "tema_sakura",
+    "lluvia_codigo",
+    "titulo_code_ninja",
+    "titulo_hacker",
+    "titulo_10x",
+    "titulo_pythonista",
+    "tema_medianoche",
+    "tema_ambar",
+    "tema_glaciar",
+    "tema_vaporwave",
+    "nieve_bits",
+    "lluvia_meteoros",
+    "pulso_datos",
+    "ascenso_chispas",
+    "tema_apagon",
+    "titulo_rubber_duck",
+    "titulo_full_stack",
+    "titulo_refactor",
+    "titulo_segfault",
+    "titulo_arquitecto_nexus",
+    "iconos_lenguajes",
+    "fauna_nexus",
+    "confeti_build",
+    "engranajes"
+  ],
+  "equipado": {
+    "tema": "apagon",
+    "titulo": "Arquitecto del NEXUS",
+    "fondo": "lluvia_codigo"
+  },
+  "boost_xp_restantes": 1,
+  "racha_shields": 1,
+  "llaves_maestras": 0,
+  "desbloqueos": [
+    "python_4"
+  ]
 }

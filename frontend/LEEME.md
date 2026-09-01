@@ -16,7 +16,7 @@ rutas (`/static/styles.css`, `/static/app.js`) y se consumen los mismos endpoint
 ## Endpoints que usa (sin cambios)
 
     GET    /api/progreso              POST   /api/progreso/completar
-    GET    /api/modulos/:lang         POST   /api/ejecutar
+    GET    /api/modulos/:lang         WS     /api/ws/ejecutar
     GET    /api/tienda                POST   /api/tienda/comprar
     GET    /ia/estado                 POST   /ia/analizar
     DELETE /ia/historial              POST   /ia/preguntar
@@ -30,8 +30,9 @@ rutas (`/static/styles.css`, `/static/app.js`) y se consumen los mismos endpoint
   objetivos (parseados de `ejercicio`), consecuencia y recompensa.
 - El editor es una **estación de trabajo**: numeración de líneas, terminal con
   pestañas SALIDA / ERROR / ARIA y un **panel de error** que lee el `output`
-  real de `/api/ejecutar` — extrae línea, clase de excepción y da una lectura
-  del error en vez de un "respuesta incorrecta".
+  real de `/api/ws/ejecutar` — extrae línea, clase de excepción y da una lectura
+  del error en vez de un "respuesta incorrecta". La ejecución es interactiva:
+  corre por WebSocket y el programa se puede pausar de verdad en `input()`.
 - El tutor pasa a ser **ARIA**, copiloto de sistema (mismos endpoints `/ia/*`).
   Si no hay `GEMINI_API_KEY`, cae a modo local y sigue explicando errores.
 - La tienda es el **depósito de requisiciones** (mismos ítems del backend).

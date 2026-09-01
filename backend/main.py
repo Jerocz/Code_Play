@@ -1,11 +1,22 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from routes import python, javascript, cpp, progreso, ejecutar, ia, proyectos, tienda
 
 app = FastAPI(title="CodeTutor API", version="1.0.0")
+
+
+@app.middleware("http")
+async def sin_cache_estaticos(request: Request, call_next):
+    # Evita que el navegador cachee agresivamente el frontend (CSS/JS/HTML):
+    # sin esto, el browser puede seguir mostrando una versión vieja de los
+    # archivos aunque ya se hayan editado en disco.
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
 
 # Registrar routers
 app.include_router(python.router, prefix="/api")

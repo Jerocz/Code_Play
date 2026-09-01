@@ -3,7 +3,7 @@
 /* ═══════════════════════════════════════════════════════════════════════
    Code Play — NEXUS. Mismos endpoints del backend:
      GET  /api/progreso                POST /api/progreso/completar
-     GET  /api/modulos/:lang           POST /api/ejecutar
+     GET  /api/modulos/:lang           WS   /api/ws/ejecutar
      GET  /api/proyectos/:lang         POST /api/proyectos/completar
      GET  /api/tienda                  POST /api/tienda/comprar
      GET  /ia/estado                   POST /ia/analizar  POST /ia/preguntar
@@ -150,6 +150,7 @@ const estado = {
   iaActiva: false,
   iaOcupada: false,
   corriendo: false,
+  wsEjecucion: null,
   consejo: 0,
   ultimoError: null,
   erroresResueltos: Number(localStorage.getItem('cp_errores') || 0), // LOCAL
@@ -162,10 +163,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   conectarUI();
   fondoAnimado();
   await cargarProgreso();
+  await cargarTiendaInicial();
   await verificarIA();
   await cargarLenguaje('python');
   nuevoConsejo();
 });
+
+async function cargarTiendaInicial() {
+  try { estado.tienda = await api('/api/tienda'); } catch (e) { estado.tienda = null; }
+  aplicarPersonalizacion();
+}
 
 function conectarUI() {
   document.querySelectorAll('[data-pantalla]').forEach(b => {
@@ -184,6 +191,10 @@ function conectarUI() {
     c.focus();
   });
   document.getElementById('btn-correr').addEventListener('click', ejecutar);
+  document.getElementById('terminal-stdin-form').addEventListener('submit', e => {
+    e.preventDefault();
+    enviarEntradaPrograma();
+  });
   document.getElementById('btn-completar').addEventListener('click', completarModulo);
   document.getElementById('btn-analizar').addEventListener('click', analizarError);
   document.getElementById('btn-ir-linea').addEventListener('click', irALinea);
@@ -513,10 +524,13 @@ function renderLateral() {
 
   const hs = hechos();
   const primerPendiente = (estado.modulos.find(m => !hs.includes(m.id)) || {}).id;
+  const desbloqueos = estado.progreso.desbloqueos || [];
+  const llaves = (estado.tienda && estado.tienda.llaves_maestras) || 0;
 
   document.getElementById('operaciones').innerHTML = s.modulos.map((m, i) => {
     const cerrada = hs.includes(m.id);
-    const abierta = m.id === 1 || hs.includes(m.id - 1);
+    const desbloqueada = desbloqueos.includes(estado.lang + '_' + m.id);
+    const abierta = m.id === 1 || hs.includes(m.id - 1) || desbloqueada;
     const curso = m.id === primerPendiente;
     const cls = cerrada ? 'cerrada' : curso ? 'curso' : abierta ? 'abierta' : 'bloqueada';
     const ic = cerrada ? 'check' : curso ? 'caret' : abierta ? 'dashed' : 'lock';
@@ -527,8 +541,19 @@ function renderLateral() {
           '<span class="op-premio">' + (cerrada ? 'CERRADA' : '+' + m.xp + ' XP') + '</span></span>' +
         '<span class="op-nombre">' + escapar(m.titulo) + '</span>' +
         '<span class="op-concepto">' + escapar(m.descripcion) + '</span>' +
-      '</span></button>';
+      '</span>' +
+      (cls === 'bloqueada' && llaves > 0
+        ? '<span class="op-llave" data-llave="' + m.id + '" title="Usar Llave Maestra (tenés ' + llaves + ')">' + svg('key', 14) + '</span>'
+        : '') +
+    '</button>';
   }).join('');
+
+  document.querySelectorAll('#operaciones [data-llave]').forEach(b => {
+    b.addEventListener('click', e => {
+      e.stopPropagation();
+      usarLlave(Number(b.dataset.llave));
+    });
+  });
 
   document.querySelectorAll('#operaciones [data-modulo]').forEach(b => {
     b.addEventListener('click', () => {
@@ -627,6 +652,27 @@ function proyectosHechosLang() {
   return (estado.progreso.proyectos && estado.progreso.proyectos[estado.lang]) || [];
 }
 
+/* Algunos proyectos necesitan cosas que el editor incorporado no ofrece
+   (un servidor corriendo, el navegador, paquetes externos, herramientas de
+   línea de comandos). Este texto se muestra tal cual, sin tecnicismos. */
+const AVISO_IDE = {
+  no: 'Este proyecto no se puede completar dentro del editor de esta app. ' +
+      'Necesita algo que está fuera de acá — por ejemplo tu propia terminal, ' +
+      'instalar programas o paquetes en tu computadora, una página abierta en ' +
+      'el navegador, un servidor corriendo, o una cuenta en un servicio externo. ' +
+      'Usá esta guía como referencia y armalo en tu computadora, fuera de la app.',
+  parcial: 'Una parte de este proyecto se puede escribir y probar acá adentro, ' +
+      'en el editor. El resto necesita algo que está fuera de esta app — por ' +
+      'ejemplo un paquete que no viene instalado, un servidor, o una herramienta ' +
+      'externa — así que esa parte la vas a terminar en tu propia computadora.',
+};
+
+function tagDisponibilidad(py) {
+  if (py.disponible_en_ide === 'no') return { texto: 'FUERA DEL IDE', clase: 'tag-warn' };
+  if (py.disponible_en_ide === 'parcial') return { texto: 'PARCIAL EN EL IDE', clase: 'tag-warn' };
+  return null;
+}
+
 function renderProyectos() {
   const lista = estado.proyectosLista || [];
   const hechos = proyectosHechosLang();
@@ -643,9 +689,11 @@ function renderProyectos() {
     const clave = estado.lang + '_' + py.id;
     const pasosHechos = ((estado.progreso.proyectos_pasos || {})[clave] || []).length;
     const totalPasos = (py.pasos || []).length;
+    const disponibilidad = tagDisponibilidad(py);
     return '<article class="proyecto-card' + (hecho ? ' hecho' : '') + '" data-proyecto="' + py.id + '">' +
       '<div class="proyecto-card-top">' +
         '<span class="tag' + (hecho ? ' tag-ok' : ' tag-acento') + '">' + (hecho ? 'COMPLETADO' : py.dificultad || 'PROYECTO') + '</span>' +
+        (disponibilidad ? '<span class="tag ' + disponibilidad.clase + '">' + disponibilidad.texto + '</span>' : '') +
       '</div>' +
       '<strong>' + escapar(py.titulo) + '</strong>' +
       '<p>' + escapar(py.descripcion || '') + '</p>' +
@@ -675,6 +723,11 @@ function abrirProyecto(id) {
   texto('py-titulo', py.titulo);
   texto('py-objetivo', py.objetivo || py.descripcion || '');
   texto('py-recompensa', '+' + py.xp + ' XP');
+
+  const avisoIde = document.getElementById('py-aviso-ide');
+  const mensajeAviso = AVISO_IDE[py.disponible_en_ide];
+  avisoIde.classList.toggle('oculta', !mensajeAviso);
+  if (mensajeAviso) avisoIde.innerHTML = svg('warnFill', 15) + '<span>' + escapar(mensajeAviso) + '</span>';
 
   document.getElementById('py-pasos').innerHTML = (py.pasos || []).map((paso, i) => {
     const marcado = pasosHechos.has(i);
@@ -922,11 +975,45 @@ function cambiarVista(vista) {
       ? [['> aria --explain ' + e.codigo, 'dim'], [e.lectura, ''], ['> el error se reporta donde el parser se rinde, no donde se originó', 'acc']]
       : [['> aria --status', 'dim'], [estado.iaActiva ? 'copiloto activo · listo para analizar tu próxima ejecución' : 'copiloto sin configurar (GEMINI_API_KEY)', 'dim']]);
   } else {
-    terminal(estado.ultimaSalida || [['> ide listo. ejecutá cuando quieras_', 'dim']]);
+    terminalStream(estado.ultimaSalida || [['> ide listo. ejecutá cuando quieras_', 'dim']]);
   }
 }
 
-/* ═══════════════ EJECUTAR ═══════════════ */
+/* ═══════════════ EJECUTAR (interactivo, vía WebSocket) ═══════════════ */
+
+/* Renderiza el buffer de la sesión como spans en línea (no divs): así un
+   "input(" que imprime sin salto de línea y la respuesta del usuario que
+   llega después quedan en el mismo renglón, como en una terminal real. */
+function terminalStream(partes) {
+  const el = document.getElementById('terminal');
+  el.innerHTML = partes.map(([t, c]) => '<span' + (c ? ' class="' + c + '"' : '') + '>' + escapar(t) + '</span>').join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function mostrarEntradaPrograma(mostrar) {
+  const form = document.getElementById('terminal-stdin-form');
+  const input = document.getElementById('terminal-stdin');
+  form.classList.toggle('oculta', !mostrar);
+  input.disabled = !mostrar;
+  if (mostrar) {
+    input.value = '';
+    setTimeout(() => input.focus(), 30);
+  }
+}
+
+function enviarEntradaPrograma() {
+  const ws = estado.wsEjecucion;
+  const input = document.getElementById('terminal-stdin');
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  const texto = input.value;
+  ws.send(JSON.stringify({ tipo: 'entrada', texto: texto }));
+  input.value = '';
+  // Eco local: el proceso corre sobre un pipe simple (no una terminal real),
+  // así que no nos devuelve lo que tipeamos — lo mostramos nosotros, como
+  // hace cualquier terminal, para que la transcripción se lea completa.
+  estado.ultimaSalida.push([texto + '\n', 'acc']);
+  if (estado.vista === 'salida') terminalStream(estado.ultimaSalida);
+}
 
 async function ejecutar() {
   if (estado.corriendo) return;
@@ -938,44 +1025,76 @@ async function ejecutar() {
   btn.disabled = true;
   btn.innerHTML = svg('dashed', 14) + ' EJECUTANDO…';
   marcarBuild('espera');
-  estado.ultimaSalida = [['> compilando ' + LANG[estado.lang].archivo + '…', 'dim']];
+  document.getElementById('panel-error').classList.add('oculta');
+  estado.vista = 'salida';
+
+  const cmd = comando() + ' ' + LANG[estado.lang].archivo;
+  estado.ultimaSalida = [['> ' + cmd + '\n', 'dim']];
   cambiarVista('salida');
+  mostrarEntradaPrograma(true);
 
-  try {
-    const r = await api('/api/ejecutar', 'POST', { lenguaje: estado.lang, codigo: codigo });
-    const cmd = comando() + ' ' + LANG[estado.lang].archivo;
+  let salidaCruda = '';
+  let huboErrorTexto = false;
 
-    if (r.exito) {
+  const finalizar = (exito, tiempo) => {
+    estado.corriendo = false;
+    estado.wsEjecucion = null;
+    mostrarEntradaPrograma(false);
+    btn.disabled = false;
+    btn.innerHTML = svg('play', 14) + ' EJECUTAR';
+
+    if (exito) {
       estado.ultimoError = null;
-      document.getElementById('panel-error').classList.add('oculta');
-      estado.ultimaSalida = [['> ' + cmd, 'dim']]
-        .concat(String(r.output).split('\n').map(l => [l, '']))
-        .concat([['✓ ejecución sin errores · ' + r.tiempo + 's', 'ok']]);
-      marcarBuild('ok', r.tiempo);
+      estado.ultimaSalida.push(['\n✓ ejecución sin errores' + (tiempo != null ? ' · ' + tiempo + 's' : '') + '\n', 'ok']);
+      marcarBuild('ok', tiempo);
       estado.vista = 'salida';
     } else {
-      estado.ultimoError = leerError(String(r.output), cmd);
+      estado.ultimoError = leerError(salidaCruda, cmd);
       mostrarPanelError();
-      estado.ultimaSalida = [['> ' + cmd, 'dim']]
-        .concat(String(r.output).split('\n').map(l => [l, 'err']))
-        .concat([['build detenido · ' + r.tiempo + 's', 'dim']]);
-      marcarBuild('err', r.tiempo);
+      estado.ultimaSalida.push(['\nbuild detenido' + (tiempo != null ? ' · ' + tiempo + 's' : '') + '\n', 'dim']);
+      marcarBuild('err', tiempo);
       estado.vista = 'error';
     }
     cambiarVista(estado.vista);
     sincronizarGutter();
     actualizarCabecera();
 
-    if (estado.iaActiva && estado.modulo) analizarConIA(codigo, r);
-  } catch (e) {
-    estado.ultimaSalida = [['✗ no pude conectar con el NEXUS. ¿Está corriendo el backend?', 'err']];
-    cambiarVista('salida');
-    marcarBuild('err');
-  } finally {
-    estado.corriendo = false;
-    btn.disabled = false;
-    btn.innerHTML = svg('play', 14) + ' EJECUTAR';
-  }
+    if (estado.iaActiva && estado.modulo) analizarConIA(codigo, { exito, output: salidaCruda, tiempo });
+  };
+
+  const protocolo = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(protocolo + '//' + location.host + '/api/ws/ejecutar');
+  estado.wsEjecucion = ws;
+
+  ws.addEventListener('open', () => {
+    ws.send(JSON.stringify({ lenguaje: estado.lang, codigo: codigo }));
+  });
+
+  ws.addEventListener('message', ev => {
+    let m;
+    try { m = JSON.parse(ev.data); } catch { return; }
+
+    if (m.tipo === 'salida') {
+      salidaCruda += m.texto;
+      estado.ultimaSalida.push([m.texto, '']);
+      if (estado.vista === 'salida') terminalStream(estado.ultimaSalida);
+    } else if (m.tipo === 'error') {
+      huboErrorTexto = true;
+      salidaCruda += (salidaCruda && !salidaCruda.endsWith('\n') ? '\n' : '') + m.mensaje;
+      estado.ultimaSalida.push([(estado.ultimaSalida.length ? '\n' : '') + m.mensaje + '\n', 'err']);
+      if (estado.vista === 'salida') terminalStream(estado.ultimaSalida);
+    } else if (m.tipo === 'fin') {
+      finalizar(m.exito && !huboErrorTexto, m.tiempo);
+      ws.close();
+    }
+  });
+
+  ws.addEventListener('close', () => {
+    if (estado.corriendo) {
+      estado.ultimaSalida.push(['\n✗ se perdió la conexión con el NEXUS. ¿Está corriendo el backend?\n', 'err']);
+      finalizar(false, null);
+    }
+  });
 }
 
 function comando() {
@@ -1063,16 +1182,24 @@ async function completarModulo() {
       mejor_racha: data.mejor_racha,
     });
 
+    if (estado.tienda) {
+      if (data.boost_xp_restantes != null) estado.tienda.boost_xp_restantes = data.boost_xp_restantes;
+      if (data.racha_shields != null) estado.tienda.racha_shields = data.racha_shields;
+    }
+
     const btn = document.getElementById('btn-completar');
     btn.disabled = true;
     btn.innerHTML = svg('check', 14) + ' YA CERRADA';
 
     const s = m.sector;
     estado.ultimaSalida = [
-      ['> validando contra el sector ' + s.sigla + '…', 'dim'],
-      ['✓ operación aceptada · integridad del sector recalculada', 'ok'],
-      ['+' + (data.xp_total_ganado || data.xp_ganado) + ' XP' + (data.xp_bonus_racha ? ' (+' + data.xp_bonus_racha + ' de continuidad)' : ''), 'acc'],
+      ['> validando contra el sector ' + s.sigla + '…\n', 'dim'],
+      ['✓ operación aceptada · integridad del sector recalculada\n', 'ok'],
+      ['+' + (data.xp_total_ganado || data.xp_ganado) + ' XP' +
+        (data.xp_bonus_racha ? ' (+' + data.xp_bonus_racha + ' de continuidad)' : '') +
+        (data.boost_aplicado ? ' · Boost x2 aplicado' : '') + '\n', 'acc'],
     ];
+    if (data.escudo_usado) estado.ultimaSalida.push(['🛡️ escudo de racha consumido · continuidad protegida\n', 'acc']);
     cambiarVista('salida');
     marcarBuild('ok');
 
@@ -1082,7 +1209,7 @@ async function completarModulo() {
 
     if (data.nivel_info.nivel > antes) mostrarAscenso(data.nivel_info);
     else {
-      aviso('Operación cerrada · +' + (data.xp_total_ganado || data.xp_ganado) + ' XP');
+      aviso('Operación cerrada · +' + (data.xp_total_ganado || data.xp_ganado) + ' XP' + (data.boost_aplicado ? ' (Boost x2)' : ''));
       cerrarIDE();
       irA('nexus');
     }
@@ -1219,6 +1346,8 @@ function renderPerfil() {
       estado.sectores.some(s => s.sigla === 'LIVE' && s.cerradas > 0)],
   ];
 
+  const tituloEquipado = estado.tienda && estado.tienda.equipado && estado.tienda.equipado.titulo;
+
   document.getElementById('perfil').className = 'perfil';
   document.getElementById('perfil').innerHTML =
     '<div class="perfil-top">' +
@@ -1226,7 +1355,7 @@ function renderPerfil() {
         '<div class="perfil-avatar">' + svg('shield', 38) + '</div>' +
         '<div class="perfil-datos">' +
           '<span class="kicker acento">RANGO ACTUAL · OPERADOR #' + String(1000 + xp % 9000) + '</span>' +
-          '<h2>' + r.nombre + '</h2>' +
+          '<h2>' + r.nombre + (tituloEquipado ? ' <span class="tag tag-acento">' + escapar(tituloEquipado) + '</span>' : '') + '</h2>' +
           '<p class="muted">' + (sig ? (sig.min - xp) + ' XP para ' + sig.nombre + ' · ' + sig.nota : 'Rango máximo del NEXUS') + '</p>' +
           '<div class="barra"><div class="barra-fill acento" style="width:' + pct + '%"></div></div>' +
         '</div>' +
@@ -1276,15 +1405,41 @@ const CAT_NOMBRE = { tema: 'Entorno de trabajo', titulo: 'Distintivos', powerup:
 const CAT_ICONO = { tema: 'monitor', titulo: 'shield', powerup: 'search', cosmetico: 'chart' };
 const ITEM_ICONO = {
   tema_matrix: 'terminal', tema_oceano: 'monitor', tema_fuego: 'monitor', tema_sakura: 'monitor',
+  tema_medianoche: 'cpu', tema_ambar: 'terminal', tema_glaciar: 'target', tema_vaporwave: 'graph',
+  tema_apagon: 'scan',
   titulo_bug_hunter: 'bug', titulo_pythonista: 'code', titulo_code_ninja: 'shield',
   titulo_hacker: 'key', titulo_10x: 'lightning', racha_shield: 'shield',
-  boost_xp: 'lightning', llave_maestra: 'key', lluvia_codigo: 'chart',
+  titulo_rubber_duck: 'search', titulo_full_stack: 'monitor', titulo_refactor: 'scan',
+  titulo_segfault: 'warnFill', titulo_arquitecto_nexus: 'cpu',
+  boost_xp: 'lightning', llave_maestra: 'key',
+  lluvia_codigo: 'chart', nieve_bits: 'graph', lluvia_meteoros: 'lightning',
+  pulso_datos: 'target', ascenso_chispas: 'pulse',
+  iconos_lenguajes: 'code', fauna_nexus: 'bug', confeti_build: 'check', engranajes: 'cpu',
 };
+
+const CONTADOR_CAMPO = { racha_shield: 'racha_shields', boost_xp: 'boost_xp_restantes', llave_maestra: 'llaves_maestras' };
+const TEMAS_VALIDOS = ['matrix', 'oceano', 'fuego', 'sakura', 'medianoche', 'ambar', 'glaciar', 'vaporwave', 'apagon'];
+const FONDOS_VALIDOS = [
+  'lluvia_codigo', 'nieve_bits', 'lluvia_meteoros', 'pulso_datos', 'ascenso_chispas',
+  'iconos_lenguajes', 'fauna_nexus', 'confeti_build', 'engranajes',
+];
 
 async function cargarDeposito() {
   try { estado.tienda = await api('/api/tienda'); }
   catch (e) { aviso('No pude abrir el depósito', true); return; }
   renderDeposito();
+}
+
+function itemEquipable(i) {
+  return i.categoria === 'tema' || i.categoria === 'titulo' || (i.categoria === 'cosmetico' && FONDOS_VALIDOS.includes(i.id));
+}
+
+function estaEquipado(i, equipado) {
+  if (!equipado) return false;
+  if (i.categoria === 'tema') return equipado.tema === i.id.replace('tema_', '');
+  if (i.categoria === 'titulo') return equipado.titulo === i.nombre;
+  if (i.categoria === 'cosmetico') return equipado.fondo === i.id;
+  return false;
 }
 
 function renderDeposito() {
@@ -1300,27 +1455,43 @@ function renderDeposito() {
     '<section class="deposito-cat"><span class="kicker">' + (CAT_NOMBRE[cat] || cat) + '</span><div class="deposito-grid">' +
     cats[cat].map((i, k) => {
       const tiene = i.unico && t.inventario.includes(i.id);
+      const equipable = itemEquipable(i);
+      const equipado = tiene && equipable && estaEquipado(i, t.equipado);
       const alcanza = xp >= i.precio;
-      const cls = tiene ? 'tenes' : alcanza ? '' : 'caro';
-      const accion = tiene ? 'EN INVENTARIO' : alcanza ? 'REQUERIR' : 'XP INSUFICIENTE';
+      const cls = (tiene ? 'tenes' : alcanza ? '' : 'caro') + (equipado ? ' equipado' : '');
+      const campoContador = CONTADOR_CAMPO[i.id];
+      const stock = campoContador ? (t[campoContador] || 0) : 0;
+
+      let boton;
+      if (tiene && equipable) {
+        boton = '<button class="btn' + (equipado ? ' btn-primary' : '') + '" data-equipar="' + i.id + '" data-activo="' + (equipado ? '1' : '0') + '">' +
+          '<span>' + (equipado ? 'EQUIPADO' : 'EQUIPAR') + '</span><span>' + (equipado ? '✓' : '') + '</span></button>';
+      } else {
+        const accion = tiene ? 'EN INVENTARIO' : alcanza ? 'REQUERIR' : 'XP INSUFICIENTE';
+        boton = '<button class="btn' + (alcanza && !tiene ? ' btn-primary' : '') + '" data-item="' + i.id + '"' +
+          (tiene || !alcanza ? ' disabled' : '') + '>' +
+          '<span>' + accion + '</span><span>' + (tiene ? '✓' : i.precio + ' XP') + '</span></button>';
+      }
+
       return '<article class="req ' + cls + '">' +
         '<div class="req-top">' +
           '<span class="req-icono">' + svg(ITEM_ICONO[i.id] || CAT_ICONO[cat] || 'package', 16) + '</span>' +
           '<span class="req-codigo">REQ-' + String(k + 1).padStart(2, '0') + '</span>' +
+          (stock ? '<span class="req-stock">×' + stock + '</span>' : '') +
           '<span class="req-precio">' + i.precio + ' XP</span>' +
         '</div>' +
         '<strong>' + escapar(i.nombre) + '</strong>' +
         '<p>' + escapar(i.descripcion) + '</p>' +
         (i.lore ? '<span class="lore">' + escapar(i.lore) + '</span>' : '') +
-        '<button class="btn' + (alcanza && !tiene ? ' btn-primary' : '') + '" data-item="' + i.id + '"' +
-          (tiene || !alcanza ? ' disabled' : '') + '>' +
-          '<span>' + accion + '</span><span>' + (tiene ? '✓' : i.precio + ' XP') + '</span>' +
-        '</button>' +
+        boton +
       '</article>';
     }).join('') + '</div></section>').join('');
 
   document.querySelectorAll('[data-item]').forEach(b => {
     b.addEventListener('click', () => requerir(b.dataset.item));
+  });
+  document.querySelectorAll('[data-equipar]').forEach(b => {
+    b.addEventListener('click', () => equiparItem(b.dataset.equipar, b.dataset.activo === '1'));
   });
 }
 
@@ -1330,11 +1501,54 @@ async function requerir(itemId) {
     estado.progreso.xp = d.xp_restante;
     estado.tienda.xp = d.xp_restante;
     estado.tienda.inventario = d.inventario;
+    estado.tienda.boost_xp_restantes = d.boost_xp_restantes;
+    estado.tienda.racha_shields = d.racha_shields;
+    estado.tienda.llaves_maestras = d.llaves_maestras;
     aviso(d.message);
     renderDeposito();
     actualizarCabecera();
+    renderLateral();
   } catch (e) {
     aviso(String(e.message).replace(/^\d+:\s*/, ''), true);
+  }
+}
+
+async function equiparItem(itemId, activo) {
+  try {
+    const d = await api('/api/tienda/equipar', 'POST', { item_id: itemId, desequipar: activo });
+    estado.tienda.equipado = d.equipado;
+    aplicarPersonalizacion();
+    aviso(d.message);
+    renderDeposito();
+    if (estado.pantalla === 'perfil') renderPerfil();
+  } catch (e) {
+    aviso(String(e.message).replace(/^\d+:\s*/, ''), true);
+  }
+}
+
+async function usarLlave(moduloId) {
+  try {
+    const d = await api('/api/tienda/usar-llave', 'POST', { lenguaje: estado.lang, modulo_id: moduloId });
+    estado.progreso.desbloqueos = d.desbloqueos;
+    if (estado.tienda) estado.tienda.llaves_maestras = d.llaves_maestras;
+    aviso('🗝️ ' + d.message);
+    renderLateral();
+  } catch (e) {
+    aviso(String(e.message).replace(/^\d+:\s*/, ''), true);
+  }
+}
+
+/* Aplica lo equipado en el depósito: tema visual y distintivo en la cabecera.
+   La lluvia de código se lee directo de estado.tienda dentro de fondoAnimado(). */
+function aplicarPersonalizacion() {
+  const eq = (estado.tienda && estado.tienda.equipado) || {};
+  TEMAS_VALIDOS.forEach(tid => document.body.classList.remove('tema-' + tid));
+  if (eq.tema) document.body.classList.add('tema-' + eq.tema);
+
+  const pill = document.getElementById('pill-titulo');
+  if (pill) {
+    if (eq.titulo) { texto('hud-titulo', eq.titulo); pill.classList.remove('oculta'); }
+    else pill.classList.add('oculta');
   }
 }
 
@@ -1345,7 +1559,16 @@ function fondoAnimado() {
   if (!cv || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const ctx = cv.getContext('2d');
   const glifos = ['{ }', '[ ]', '( )', '< >', '=>', '#', ';', '::', '/*', 'i++'];
-  let w = 0, h = 0, nodos = [], trozos = [];
+  const KATAKANA = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉ01';
+  const LENGUAJES = [
+    { t: 'PY', c: '77,166,255' }, { t: 'JS', c: '247,223,30' }, { t: 'C++', c: '90,155,255' },
+    { t: 'TS', c: '49,150,220' }, { t: 'GO', c: '0,200,220' }, { t: 'RS', c: '230,140,90' },
+  ];
+  const ANIMALES = ['🐍', '🐛', '🦆', '🐙', '🦉', '🐧'];
+  const CONFETI_COLORES = ['255,99,132', '54,162,235', '255,206,86', '80,200,170', '180,140,255', '255,159,64'];
+
+  let w = 0, h = 0, nodos = [], trozos = [], lluviaCols = [], copos = [], meteoros = [], pulsos = [], chispas = [],
+    logos = [], fauna = [], confeti = [], engranajes = [];
   const mouse = { x: -999, y: -999 };
 
   function medir() {
@@ -1364,6 +1587,220 @@ function fondoAnimado() {
       t: glifos[Math.floor(Math.random() * glifos.length)],
       a: Math.random() * 0.1 + 0.03, s: Math.random() * 5 + 9,
     }));
+    const colW = 15;
+    lluviaCols = Array.from({ length: Math.ceil(w / colW) }, (_, i) => ({
+      x: i * colW, y: Math.random() * -h, v: Math.random() * 2.8 + 2.4, len: Math.floor(Math.random() * 6) + 7,
+    }));
+    copos = Array.from({ length: Math.round(w / 24) }, () => ({
+      x: Math.random() * w, y: Math.random() * h,
+      v: Math.random() * 0.5 + 0.22, a: Math.random() * 0.45 + 0.35,
+      ch: Math.random() < 0.5 ? '0' : '1', fase: Math.random() * Math.PI * 2,
+    }));
+    logos = Array.from({ length: 15 }, () => {
+      const L = LENGUAJES[Math.floor(Math.random() * LENGUAJES.length)];
+      return {
+        x: Math.random() * w, y: Math.random() * h,
+        vy: (Math.random() - 0.5) * 0.22, vx: (Math.random() - 0.5) * 0.14,
+        rot: (Math.random() - 0.5) * 0.3, vrot: (Math.random() - 0.5) * 0.004,
+        t: L.t, c: L.c, size: Math.random() * 6 + 13, a: Math.random() * 0.3 + 0.3,
+      };
+    });
+    fauna = Array.from({ length: 11 }, () => ({
+      x: Math.random() * w, y: Math.random() * h,
+      vy: -(Math.random() * 0.28 + 0.1), vx: (Math.random() - 0.5) * 0.12,
+      ch: ANIMALES[Math.floor(Math.random() * ANIMALES.length)],
+      size: Math.random() * 10 + 16, a: Math.random() * 0.35 + 0.35, fase: Math.random() * Math.PI * 2,
+    }));
+    confeti = Array.from({ length: Math.round(w / 22) }, () => ({
+      x: Math.random() * w, y: Math.random() * h,
+      vy: Math.random() * 1 + 0.6, vx: (Math.random() - 0.5) * 0.5,
+      rot: Math.random() * Math.PI * 2, vrot: (Math.random() - 0.5) * 0.09,
+      size: Math.random() * 4 + 3, c: CONFETI_COLORES[Math.floor(Math.random() * CONFETI_COLORES.length)],
+      a: Math.random() * 0.35 + 0.4,
+    }));
+    engranajes = Array.from({ length: 7 }, () => ({
+      x: Math.random() * w, y: Math.random() * h, r: Math.random() * 26 + 16,
+      teeth: 8 + Math.floor(Math.random() * 4), rot: Math.random() * Math.PI * 2,
+      v: (Math.random() < 0.5 ? 1 : -1) * (Math.random() * 0.007 + 0.004),
+      a: Math.random() * 0.28 + 0.22,
+    }));
+    meteoros = [];
+    pulsos = [];
+    chispas = [];
+  }
+
+  /* ── Lluvia de Código: columnas de katakana cayendo, estilo Matrix ── */
+  function dibujarLluvia() {
+    ctx.font = '14px "JetBrains Mono", monospace';
+    lluviaCols.forEach(c => {
+      for (let k = 0; k < c.len; k++) {
+        const y = c.y - k * 16;
+        if (y < -16 || y > h + 16) continue;
+        const ch = KATAKANA[Math.floor(Math.random() * KATAKANA.length)];
+        const fade = 1 - k / c.len;
+        ctx.fillStyle = k === 0
+          ? 'rgba(210,255,225,' + (0.85 * fade).toFixed(2) + ')'
+          : 'rgba(75,240,135,' + (0.65 * fade).toFixed(2) + ')';
+        ctx.fillText(ch, c.x, y);
+      }
+      c.y += c.v;
+      if (c.y - c.len * 16 > h) { c.y = Math.random() * -100; c.v = Math.random() * 2.8 + 2.4; c.len = Math.floor(Math.random() * 6) + 7; }
+    });
+  }
+
+  /* ── Nieve de Bits: ceros y unos cayendo despacio, con leve vaivén ── */
+  function dibujarNieve() {
+    ctx.font = '12px "JetBrains Mono", monospace';
+    copos.forEach(c => {
+      ctx.fillStyle = 'rgba(220,240,255,' + c.a.toFixed(2) + ')';
+      ctx.fillText(c.ch, c.x + Math.sin(c.y * 0.02 + c.fase) * 14, c.y);
+      c.y += c.v;
+      if (c.y > h + 10) { c.y = -10; c.x = Math.random() * w; }
+    });
+  }
+
+  /* ── Lluvia de Meteoros: rachas diagonales frecuentes con estela ── */
+  function dibujarMeteoros() {
+    meteoros.forEach(m => {
+      const grad = ctx.createLinearGradient(m.x, m.y, m.x - m.vx * 7, m.y - m.vy * 7);
+      const alpha = m.vida / m.vidaMax;
+      grad.addColorStop(0, 'rgba(255,230,160,' + (alpha * 0.9).toFixed(2) + ')');
+      grad.addColorStop(1, 'rgba(255,230,160,0)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x - m.vx * 7, m.y - m.vy * 7); ctx.stroke();
+      m.x += m.vx; m.y += m.vy; m.vida--;
+    });
+    meteoros = meteoros.filter(m => m.vida > 0 && m.x > -60 && m.y < h + 60);
+    if (Math.random() < 0.05 && meteoros.length < 7) {
+      meteoros.push({ x: Math.random() * w, y: -20, vx: -(Math.random() * 2 + 3), vy: Math.random() * 2 + 3, vida: 48, vidaMax: 48 });
+    }
+  }
+
+  /* ── Pulso de Datos: anillos de sonar que laten desde puntos al azar ── */
+  function dibujarPulsos() {
+    pulsos.forEach(p => {
+      const alpha = Math.max(0, 1 - p.r / p.rMax);
+      ctx.strokeStyle = 'rgba(150,215,255,' + (alpha * 0.55).toFixed(2) + ')';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.stroke();
+      p.r += 0.85;
+    });
+    pulsos = pulsos.filter(p => p.r < p.rMax);
+    if (Math.random() < 0.035 && pulsos.length < 8) {
+      pulsos.push({ x: Math.random() * w, y: Math.random() * h, r: 0, rMax: Math.random() * 80 + 60 });
+    }
+  }
+
+  /* ── Ascenso de Chispas: brasas subiendo desde abajo con parpadeo ── */
+  function dibujarChispas() {
+    chispas.forEach(c => {
+      const alpha = c.vida / c.vidaMax;
+      ctx.fillStyle = 'rgba(255,160,70,' + (alpha * 0.8).toFixed(2) + ')';
+      ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2); ctx.fill();
+      c.y -= c.v; c.x += Math.sin(c.y * 0.05) * 0.3; c.vida--;
+    });
+    chispas = chispas.filter(c => c.vida > 0);
+    if (chispas.length < 60) {
+      chispas.push({ x: Math.random() * w, y: h + 10, v: Math.random() * 0.65 + 0.35, r: Math.random() * 1.5 + 0.7, vida: 230, vidaMax: 230 });
+    }
+  }
+
+  /* ── Logos del Lenguaje: etiquetas PY/JS/C++/TS/GO/RS flotando ── */
+  function dibujarLenguajes() {
+    logos.forEach(l => {
+      ctx.save();
+      ctx.translate(l.x, l.y);
+      ctx.rotate(l.rot);
+      ctx.font = '700 ' + l.size.toFixed(0) + 'px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const pad = ctx.measureText(l.t).width + 14;
+      ctx.strokeStyle = 'rgba(' + l.c + ',' + (l.a * 0.8).toFixed(2) + ')';
+      ctx.lineWidth = 1.2;
+      if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(-pad / 2, -l.size * 0.72, pad, l.size * 1.44, 6); ctx.stroke(); }
+      else ctx.strokeRect(-pad / 2, -l.size * 0.72, pad, l.size * 1.44);
+      ctx.fillStyle = 'rgba(' + l.c + ',' + l.a.toFixed(2) + ')';
+      ctx.fillText(l.t, 0, 1);
+      ctx.restore();
+      l.y += l.vy; l.x += l.vx; l.rot += l.vrot;
+      if (l.y < -40) l.y = h + 40; else if (l.y > h + 40) l.y = -40;
+      if (l.x < -70) l.x = w + 70; else if (l.x > w + 70) l.x = -70;
+    });
+  }
+
+  /* ── Fauna del NEXUS: mascotas de la cultura dev flotando despacio ── */
+  function dibujarFauna() {
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    fauna.forEach(f => {
+      ctx.globalAlpha = f.a;
+      ctx.font = f.size.toFixed(0) + 'px sans-serif';
+      ctx.fillText(f.ch, f.x + Math.sin(f.y * 0.02 + f.fase) * 10, f.y);
+      f.y += f.vy; f.x += f.vx;
+      if (f.y < -30) { f.y = h + 30; f.x = Math.random() * w; }
+    });
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  }
+
+  /* ── Confeti de Build: cuadraditos de colores cayendo y girando ── */
+  function dibujarConfeti() {
+    confeti.forEach(p => {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = 'rgba(' + p.c + ',' + p.a.toFixed(2) + ')';
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.6);
+      ctx.restore();
+      p.y += p.vy; p.x += p.vx; p.rot += p.vrot;
+      if (p.y > h + 12) { p.y = -12; p.x = Math.random() * w; }
+    });
+  }
+
+  /* ── Engranajes del Sistema: piezas mecánicas girando de fondo ── */
+  function dibujarEngranaje(x, y, r, teeth, rot, alpha) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    const toothH = r * 0.28;
+    ctx.beginPath();
+    for (let i = 0; i < teeth; i++) {
+      const a0 = (i / teeth) * Math.PI * 2;
+      const a1 = a0 + (Math.PI * 2 / teeth) * 0.5;
+      ctx.lineTo(Math.cos(a0) * r, Math.sin(a0) * r);
+      ctx.lineTo(Math.cos(a0) * (r + toothH), Math.sin(a0) * (r + toothH));
+      ctx.lineTo(Math.cos(a1) * (r + toothH), Math.sin(a1) * (r + toothH));
+      ctx.lineTo(Math.cos(a1) * r, Math.sin(a1) * r);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(165,178,196,' + alpha.toFixed(2) + ')';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.28, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+  function dibujarEngranajes() {
+    engranajes.forEach(g => {
+      dibujarEngranaje(g.x, g.y, g.r, g.teeth, g.rot, g.a);
+      g.rot += g.v;
+    });
+  }
+
+  const DIBUJOS_FONDO = {
+    lluvia_codigo: dibujarLluvia,
+    nieve_bits: dibujarNieve,
+    lluvia_meteoros: dibujarMeteoros,
+    pulso_datos: dibujarPulsos,
+    ascenso_chispas: dibujarChispas,
+    iconos_lenguajes: dibujarLenguajes,
+    fauna_nexus: dibujarFauna,
+    confeti_build: dibujarConfeti,
+    engranajes: dibujarEngranajes,
+  };
+
+  function dibujarFondoEquipado() {
+    const id = estado.tienda && estado.tienda.equipado && estado.tienda.equipado.fondo;
+    const fn = id && DIBUJOS_FONDO[id];
+    if (fn) fn();
   }
 
   window.addEventListener('resize', medir);
@@ -1372,6 +1809,7 @@ function fondoAnimado() {
 
   (function paso() {
     ctx.clearRect(0, 0, w, h);
+    dibujarFondoEquipado();
     trozos.forEach(t => {
       t.y += t.vy;
       if (t.y < -20) { t.y = h + 20; t.x = Math.random() * w; }

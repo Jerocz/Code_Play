@@ -94,6 +94,14 @@ def _cargar_progreso():
             for lang in ["python", "javascript", "cpp"]:
                 proyectos.setdefault(lang, [])
             data.setdefault("proyectos_pasos", {})
+            # Campos de la tienda: se leen y escriben acá también porque
+            # completar un módulo consume boosts/escudos comprados ahí.
+            data.setdefault("inventario", [])
+            data.setdefault("equipado", {"tema": None, "titulo": None, "fondo": None})
+            data.setdefault("boost_xp_restantes", 0)
+            data.setdefault("racha_shields", 0)
+            data.setdefault("llaves_maestras", 0)
+            data.setdefault("desbloqueos", [])
             return data
     except (FileNotFoundError, json.JSONDecodeError):
         return _default_progreso()
@@ -127,6 +135,7 @@ def _calcular_racha(progreso: dict):
     mejor = progreso.get("mejor_racha", 0)
     ultima = progreso.get("ultima_actividad")
     today = date.today().isoformat()
+    escudo_usado = False
 
     if ultima is None:
         racha = 1
@@ -140,12 +149,19 @@ def _calcular_racha(progreso: dict):
         elif diff == 1:
             racha += 1
             es_nueva = True
+        elif progreso.get("racha_shields", 0) > 0:
+            # El Escudo de Racha (comprado en el depósito) absorbe el día
+            # salteado en vez de resetear la racha a 1.
+            progreso["racha_shields"] -= 1
+            racha += 1
+            es_nueva = True
+            escudo_usado = True
         else:
             racha = 1
             es_nueva = True
 
     mejor = max(mejor, racha)
-    return racha, mejor, today, es_nueva
+    return racha, mejor, today, es_nueva, escudo_usado
 
 
 def _bonus_racha(racha: int, xp_base: int) -> int:
@@ -195,10 +211,21 @@ def completar_modulo(req: CompletarRequest):
             "racha": progreso.get("racha", 0),
             "mejor_racha": progreso.get("mejor_racha", 0),
             "es_nueva_racha": False,
+            "boost_aplicado": False,
+            "boost_xp_restantes": progreso.get("boost_xp_restantes", 0),
+            "escudo_usado": False,
+            "racha_shields": progreso.get("racha_shields", 0),
         }
 
-    racha, mejor_racha, today, es_nueva_racha = _calcular_racha(progreso)
+    racha, mejor_racha, today, es_nueva_racha, escudo_usado = _calcular_racha(progreso)
+
     xp_ganado = XP_POR_MODULO.get(lenguaje, {}).get(req.modulo_id, 50)
+    boost_disponible = progreso.get("boost_xp_restantes", 0)
+    boost_aplicado = boost_disponible > 0
+    if boost_aplicado:
+        xp_ganado *= 2
+        progreso["boost_xp_restantes"] = boost_disponible - 1
+
     xp_bonus = _bonus_racha(racha, xp_ganado)
     xp_total_ganado = xp_ganado + xp_bonus
 
@@ -226,6 +253,10 @@ def completar_modulo(req: CompletarRequest):
         "racha": racha,
         "mejor_racha": mejor_racha,
         "es_nueva_racha": es_nueva_racha,
+        "boost_aplicado": boost_aplicado,
+        "boost_xp_restantes": progreso.get("boost_xp_restantes", 0),
+        "escudo_usado": escudo_usado,
+        "racha_shields": progreso.get("racha_shields", 0),
     }
 
 

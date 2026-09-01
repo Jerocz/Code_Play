@@ -16,6 +16,7 @@ router = APIRouter()
 PROYECTOS_PYTHON = [
     {
         "id": 1,
+        "disponible_en_ide": "si",
         "titulo": "Adivina el número",
         "descripcion": "La compu elige un número secreto y vos tenés que adivinarlo con pistas de más alto / más bajo.",
         "dificultad": "Principiante",
@@ -64,6 +65,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 2,
+        "disponible_en_ide": "si",
         "titulo": "Gestor de tareas en consola con guardado en archivo",
         "descripcion": "CLI para agregar, listar y completar tareas, que persisten en un archivo entre ejecuciones.",
         "dificultad": "Principiante+",
@@ -112,6 +114,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 3,
+        "disponible_en_ide": "no",
         "titulo": "Consulta del clima con una API",
         "descripcion": "Pedí una ciudad y mostrá su clima actual consultando una API pública gratuita.",
         "dificultad": "Intermedio",
@@ -160,6 +163,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 4,
+        "disponible_en_ide": "no",
         "titulo": "Página web personal con Flask",
         "descripcion": "Sitio con varias páginas (inicio, sobre mí, proyectos) servido con Flask y plantillas reutilizables.",
         "dificultad": "Intermedio",
@@ -208,6 +212,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 5,
+        "disponible_en_ide": "no",
         "titulo": "Analizador de gastos con gráficos",
         "descripcion": "Leé un CSV de gastos personales y generá un resumen con gráficos por categoría.",
         "dificultad": "Intermedio+",
@@ -256,6 +261,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 6,
+        "disponible_en_ide": "no",
         "titulo": "Tu primer repositorio: Git y GitHub desde cero",
         "descripcion": "Versioná uno de tus proyectos con Git, trabajá con ramas y subilo a GitHub.",
         "dificultad": "Principiante+",
@@ -305,6 +311,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 7,
+        "disponible_en_ide": "no",
         "titulo": "Debugging real con pdb y el debugger de VS Code",
         "descripcion": "Dejá de llenar el código de prints: encontrá bugs usando un debugger de verdad.",
         "dificultad": "Intermedio",
@@ -354,6 +361,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 8,
+        "disponible_en_ide": "no",
         "titulo": "Testing con pytest: probá tu código como un profesional",
         "descripcion": "Escribí tests automatizados para dejar de verificar tu código a mano cada vez.",
         "dificultad": "Intermedio",
@@ -403,6 +411,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 9,
+        "disponible_en_ide": "si",
         "titulo": "Base de datos con SQL: sqlite3 desde Python",
         "descripcion": "Reemplazá el guardado en JSON por una base de datos SQL de verdad, sin instalar nada externo.",
         "dificultad": "Intermedio",
@@ -452,6 +461,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 10,
+        "disponible_en_ide": "no",
         "titulo": "Dominá la terminal: navegación y scripting básico",
         "descripcion": "Dejá de depender solo del botón 'Run': aprendé a moverte y automatizar tareas desde la línea de comandos.",
         "dificultad": "Principiante",
@@ -501,6 +511,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 11,
+        "disponible_en_ide": "no",
         "titulo": "Entorno profesional: venv, pip y estructura de proyecto",
         "descripcion": "Aislá las dependencias de cada proyecto y organizá tu código como un profesional.",
         "dificultad": "Intermedio",
@@ -550,6 +561,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 12,
+        "disponible_en_ide": "no",
         "titulo": "Código limpio: linters, formateadores y logging",
         "descripcion": "Dejá que las herramientas encuentren tus errores de estilo, y reemplazá los prints por logging real.",
         "dificultad": "Intermedio",
@@ -599,6 +611,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 13,
+        "disponible_en_ide": "no",
         "titulo": "Deploy básico: subí tu proyecto a internet",
         "descripcion": "Llevá tu API de FastAPI de 'funciona en mi máquina' a un servidor real y accesible desde cualquier lado.",
         "dificultad": "Intermedio",
@@ -648,6 +661,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 14,
+        "disponible_en_ide": "parcial",
         "titulo": "Seguridad básica: protegé tu aplicación",
         "descripcion": "Entendé (y prevení) los errores de seguridad más comunes: inyección SQL, inputs sin validar y contraseñas mal guardadas.",
         "dificultad": "Intermedio",
@@ -697,6 +711,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 15,
+        "disponible_en_ide": "no",
         "titulo": "Consumí una API de IA desde cero",
         "descripcion": "Conectate a un modelo de lenguaje real desde tu propio código, como lo hace el tutor IA de esta misma app.",
         "dificultad": "Intermedio",
@@ -752,6 +767,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 16,
+        "disponible_en_ide": "no",
         "titulo": "Autenticación y autorización con JWT",
         "descripcion": "Login real con tokens: quién sos, qué podés hacer, y por cuánto tiempo — armá tu propio sistema de auth con FastAPI y JWT.",
         "dificultad": "Avanzado",
@@ -801,6 +817,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 17,
+        "disponible_en_ide": "no",
         "titulo": "Arquitectura MVC: organizá tu código como un framework real",
         "descripcion": "Separá tu API en modelos, vistas y controladores — la misma organización que usan Django, Rails y la mayoría de los frameworks profesionales.",
         "dificultad": "Intermedio+",
@@ -848,6 +865,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 18,
+        "disponible_en_ide": "no",
         "titulo": "Clean code y refactorización: de spaghetti a profesional",
         "descripcion": "Tomá un código que funciona pero es un desastre, y transformalo paso a paso en algo que cualquier profesional podría leer y mantener.",
         "dificultad": "Intermedio",
@@ -896,6 +914,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 19,
+        "disponible_en_ide": "no",
         "titulo": "Docker de verdad: docker-compose, volumes y multi-stage builds",
         "descripcion": "Un Dockerfile simple no alcanza para una app real — armá un entorno completo con base de datos, variables de entorno y una imagen optimizada para producción.",
         "dificultad": "Avanzado",
@@ -944,6 +963,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 20,
+        "disponible_en_ide": "no",
         "titulo": "Diseñá una API REST como los libros de texto",
         "descripcion": "Status codes correctos, paginación, versionado, idempotencia, y ese error de CORS que seguro ya viste en la consola del navegador — todo lo que separa una API amateur de una profesional.",
         "dificultad": "Avanzado",
@@ -993,6 +1013,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 21,
+        "disponible_en_ide": "no",
         "titulo": "Diseño de sistemas básico: caching, balanceo y CAP theorem",
         "descripcion": "Cómo escalan las aplicaciones reales cuando millones de personas las usan a la vez — conceptos clave con una demo chiquita de caching que podés correr en tu máquina.",
         "dificultad": "Avanzado",
@@ -1040,6 +1061,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 22,
+        "disponible_en_ide": "parcial",
         "titulo": "Bases de datos como un profesional: normalización, índices y ACID",
         "descripcion": "Tu base de datos ya funciona — ahora hacela rápida y correcta de verdad: normalización, índices, transacciones, y el clásico problema N+1 que hace lenta a media internet.",
         "dificultad": "Avanzado",
@@ -1088,6 +1110,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 23,
+        "disponible_en_ide": "no",
         "titulo": "Git avanzado: rebase, cherry-pick y estrategias de branching",
         "descripcion": "Más allá de add/commit/push — los comandos y estrategias que usa un equipo real para mantener un historial de Git limpio y coordinar el trabajo de varias personas.",
         "dificultad": "Avanzado",
@@ -1136,6 +1159,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 24,
+        "disponible_en_ide": "no",
         "titulo": "Estrategia de testing: la pirámide y un test de integración real",
         "descripcion": "No todos los tests son iguales — entendé la pirámide de testing (unit, integración, e2e) y escribí un test de integración de verdad contra tu base de datos.",
         "dificultad": "Avanzado",
@@ -1183,6 +1207,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 25,
+        "disponible_en_ide": "no",
         "titulo": "Observabilidad: logs, métricas, traces y un /health real",
         "descripcion": "Cuando tu app está en producción y algo falla a las 3 de la mañana, la observabilidad es lo que te permite entender qué pasó sin adivinar.",
         "dificultad": "Avanzado",
@@ -1231,6 +1256,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 26,
+        "disponible_en_ide": "no",
         "titulo": "Tipado estático en Python: type hints y mypy",
         "descripcion": "Python no obliga a declarar tipos, pero podés anotarlos igual — y dejar que una herramienta te avise de errores antes de correr el programa.",
         "dificultad": "Intermedio+",
@@ -1278,6 +1304,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 27,
+        "disponible_en_ide": "no",
         "titulo": "Documentación de código y APIs: docstrings con criterio",
         "descripcion": "Documentar todo es tan malo como no documentar nada — aprendé a elegir qué merece una explicación, y aprovechá que FastAPI ya te regala documentación automática.",
         "dificultad": "Intermedio",
@@ -1325,6 +1352,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 28,
+        "disponible_en_ide": "no",
         "titulo": "Publicá tu propio paquete en PyPI",
         "descripcion": "De un script suelto a algo instalable con pip install — estructura de paquete, versionado semántico y publicación real (o simulada) en TestPyPI.",
         "dificultad": "Avanzado",
@@ -1373,6 +1401,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 29,
+        "disponible_en_ide": "no",
         "titulo": "El patrón Middleware: cómo funciona por dentro",
         "descripcion": "Cada vez que usás CORS o autenticación en FastAPI, hay un middleware trabajando — armá los tuyos propios y entendé exactamente qué hacen.",
         "dificultad": "Avanzado",
@@ -1421,6 +1450,7 @@ PROYECTOS_PYTHON = [
     },
     {
         "id": 30,
+        "disponible_en_ide": "no",
         "titulo": "Arquitectura basada en eventos: colas de mensajes con Redis pub/sub",
         "descripcion": "Desacoplá tus servicios con mensajes en vez de llamadas directas — publicá eventos con Redis y dejá que otros procesos reaccionen sin que vos sepas quién los escucha.",
         "dificultad": "Avanzado",
@@ -1474,6 +1504,7 @@ PROYECTOS_PYTHON = [
 PROYECTOS_JAVASCRIPT = [
     {
         "id": 1,
+        "disponible_en_ide": "si",
         "titulo": "Cajero automático (ATM) simulado",
         "descripcion": "Simulá un cajero en consola con Node.js: consultar saldo, depositar y retirar, protegido con PIN.",
         "dificultad": "Principiante+",
@@ -1522,6 +1553,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 2,
+        "disponible_en_ide": "si",
         "titulo": "Sistema de gestión de estudiantes (CRUD)",
         "descripcion": "Programa en Node.js para crear, leer, actualizar y eliminar estudiantes guardados en memoria.",
         "dificultad": "Intermedio",
@@ -1570,6 +1602,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 3,
+        "disponible_en_ide": "no",
         "titulo": "Juego del ahorcado con interfaz web (DOM)",
         "descripcion": "Ahorcado jugable en el navegador: se elige una palabra al azar y se adivina letra por letra con un teclado en pantalla.",
         "dificultad": "Intermedio",
@@ -1618,6 +1651,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 4,
+        "disponible_en_ide": "no",
         "titulo": "Agenda de contactos con persistencia",
         "descripcion": "Agenda de contactos que guarda los datos entre sesiones usando localStorage.",
         "dificultad": "Intermedio+",
@@ -1666,6 +1700,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 5,
+        "disponible_en_ide": "no",
         "titulo": "Chat cliente-servidor con WebSockets",
         "descripcion": "Chat en tiempo real donde varios clientes conectados a un servidor Node.js se envían mensajes entre sí.",
         "dificultad": "Avanzado",
@@ -1714,6 +1749,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 6,
+        "disponible_en_ide": "no",
         "titulo": "Tu primer repositorio: Git y GitHub para proyectos JS",
         "descripcion": "Versioná un proyecto de JavaScript con Git, trabajá con ramas y subilo a GitHub.",
         "dificultad": "Principiante+",
@@ -1763,6 +1799,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 7,
+        "disponible_en_ide": "no",
         "titulo": "Debugging en el navegador: Chrome DevTools",
         "descripcion": "Dejá el console.log everywhere y aprendé a debuggear JS con las herramientas reales del navegador.",
         "dificultad": "Intermedio",
@@ -1812,6 +1849,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 8,
+        "disponible_en_ide": "no",
         "titulo": "Testing en JS con Jest",
         "descripcion": "Escribí tests automatizados para tu código JavaScript en vez de probarlo a mano cada vez.",
         "dificultad": "Intermedio",
@@ -1861,6 +1899,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 9,
+        "disponible_en_ide": "no",
         "titulo": "Bases de datos con SQL: SQLite desde Node.js",
         "descripcion": "Reemplazá localStorage o un JSON por una base de datos SQL real, sin instalar un servidor aparte.",
         "dificultad": "Intermedio",
@@ -1910,6 +1949,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 10,
+        "disponible_en_ide": "no",
         "titulo": "Node.js y npm: gestores de paquetes en JS",
         "descripcion": "Entendé package.json de una vez por todas y organizá las dependencias de tu proyecto como corresponde.",
         "dificultad": "Principiante+",
@@ -1959,6 +1999,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 11,
+        "disponible_en_ide": "no",
         "titulo": "Código limpio: ESLint, Prettier y logging profesional",
         "descripcion": "Dejá que las herramientas encuentren tus errores de estilo, y reemplazá los console.log por un logging con criterio.",
         "dificultad": "Intermedio",
@@ -2008,6 +2049,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 12,
+        "disponible_en_ide": "no",
         "titulo": "Deploy básico: subí tu app JS a internet",
         "descripcion": "Llevá tu app de Node de 'funciona en mi máquina' a una URL pública y accesible desde cualquier lado.",
         "dificultad": "Intermedio",
@@ -2057,6 +2099,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 13,
+        "disponible_en_ide": "parcial",
         "titulo": "Seguridad básica en JS: XSS, validación e inyección",
         "descripcion": "Entendé (y prevení) los errores de seguridad más comunes en aplicaciones web con JavaScript.",
         "dificultad": "Intermedio",
@@ -2106,6 +2149,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 14,
+        "disponible_en_ide": "no",
         "titulo": "Consumí una API de IA desde JS",
         "descripcion": "Conectate a un modelo de lenguaje real desde JavaScript, como lo hace el tutor IA de esta misma app.",
         "dificultad": "Intermedio",
@@ -2161,6 +2205,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 15,
+        "disponible_en_ide": "no",
         "titulo": "Accesibilidad web básica (a11y)",
         "descripcion": "Hacé que tus páginas sean usables por cualquiera, incluyendo personas que navegan con teclado o lector de pantalla.",
         "dificultad": "Intermedio",
@@ -2210,6 +2255,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 16,
+        "disponible_en_ide": "no",
         "titulo": "Autenticación y autorización con JWT",
         "descripcion": "Login real con tokens: quién sos, qué podés hacer, y por cuánto tiempo — armá tu propio sistema de auth con Express y jsonwebtoken.",
         "dificultad": "Avanzado",
@@ -2259,6 +2305,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 17,
+        "disponible_en_ide": "no",
         "titulo": "Arquitectura MVC: organizá tu código como un framework real",
         "descripcion": "Separá tu API en modelos, vistas y controladores — la misma organización que usan Rails, Django y la mayoría de los frameworks profesionales.",
         "dificultad": "Intermedio+",
@@ -2306,6 +2353,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 18,
+        "disponible_en_ide": "no",
         "titulo": "Clean code y refactorización en JS",
         "descripcion": "Tomá un código que funciona pero es un desastre, y transformalo paso a paso en algo que cualquier profesional podría leer y mantener.",
         "dificultad": "Intermedio",
@@ -2354,6 +2402,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 19,
+        "disponible_en_ide": "no",
         "titulo": "Docker de verdad para apps Node",
         "descripcion": "Un Dockerfile simple no alcanza para una app real — armá un entorno completo con base de datos, volumes y una imagen optimizada para producción.",
         "dificultad": "Avanzado",
@@ -2402,6 +2451,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 20,
+        "disponible_en_ide": "no",
         "titulo": "Migrá tu proyecto JS a TypeScript",
         "descripcion": "Convertí un proyecto JavaScript real a TypeScript paso a paso: tipos básicos, interfaces y tsconfig.json, sin reescribir todo de una.",
         "dificultad": "Avanzado",
@@ -2451,6 +2501,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 21,
+        "disponible_en_ide": "no",
         "titulo": "Estrategia de testing: la pirámide con Jest",
         "descripcion": "No todos los tests son iguales — entendé la pirámide de testing (unit, integración, e2e) y organizá tus tests de Jest según ese criterio.",
         "dificultad": "Avanzado",
@@ -2498,6 +2549,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 22,
+        "disponible_en_ide": "no",
         "titulo": "Observabilidad en Node: logs, métricas y un /health real",
         "descripcion": "Cuando tu app está en producción y algo falla a las 3 de la mañana, la observabilidad es lo que te permite entender qué pasó sin adivinar.",
         "dificultad": "Avanzado",
@@ -2546,6 +2598,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 23,
+        "disponible_en_ide": "parcial",
         "titulo": "Documentación de código con JSDoc",
         "descripcion": "Comentarios que generan documentación real — y por qué eso es distinto de un comentario cualquiera tirado arriba de una función.",
         "dificultad": "Intermedio",
@@ -2594,6 +2647,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 24,
+        "disponible_en_ide": "no",
         "titulo": "Publicá tu propio paquete en npm",
         "descripcion": "De un módulo suelto a algo instalable con npm install — package.json listo para publicar, versionado semántico y npm publish (o simulado).",
         "dificultad": "Avanzado",
@@ -2642,6 +2696,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 25,
+        "disponible_en_ide": "no",
         "titulo": "El patrón Middleware en Express",
         "descripcion": "Cada vez que usás CORS, autenticación o logging en Express, hay un middleware trabajando — armá los tuyos propios y entendé el orden de ejecución.",
         "dificultad": "Avanzado",
@@ -2690,6 +2745,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 26,
+        "disponible_en_ide": "no",
         "titulo": "CORS y same-origin policy: por qué tu fetch() falla",
         "descripcion": "Ese error rojo en la consola que dice 'blocked by CORS policy' — entendé qué es lo que realmente está pasando y cómo configurarlo bien del lado del servidor.",
         "dificultad": "Intermedio",
@@ -2738,6 +2794,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 27,
+        "disponible_en_ide": "no",
         "titulo": "GraphQL como alternativa a REST",
         "descripcion": "Un solo endpoint, el cliente pide exactamente los datos que necesita — armá un mini servidor GraphQL y compará el enfoque con REST.",
         "dificultad": "Avanzado",
@@ -2787,6 +2844,7 @@ PROYECTOS_JAVASCRIPT = [
     },
     {
         "id": 28,
+        "disponible_en_ide": "no",
         "titulo": "Performance web: lazy loading, bundling y minificación",
         "descripcion": "Por qué tu página tarda en cargar, y qué podés hacer al respecto — cargá menos, más tarde, y más chico.",
         "dificultad": "Intermedio+",
@@ -2841,6 +2899,7 @@ PROYECTOS_JAVASCRIPT = [
 PROYECTOS_CPP = [
     {
         "id": 1,
+        "disponible_en_ide": "si",
         "titulo": "Calculadora de consola",
         "descripcion": "Programa que lee dos números y una operación, muestra el resultado y repite hasta que el usuario decida salir.",
         "dificultad": "Principiante",
@@ -2889,6 +2948,7 @@ PROYECTOS_CPP = [
     },
     {
         "id": 2,
+        "disponible_en_ide": "si",
         "titulo": "Tres en raya (Tic-Tac-Toe)",
         "descripcion": "Juego de tres en raya para dos jugadores en la misma consola, con tablero visual en texto.",
         "dificultad": "Principiante+",
@@ -2937,6 +2997,7 @@ PROYECTOS_CPP = [
     },
     {
         "id": 3,
+        "disponible_en_ide": "si",
         "titulo": "Sistema de gestión de biblioteca (POO)",
         "descripcion": "Sistema en consola para gestionar libros de una biblioteca: agregar, buscar, prestar y devolver.",
         "dificultad": "Intermedio",
@@ -2985,6 +3046,7 @@ PROYECTOS_CPP = [
     },
     {
         "id": 4,
+        "disponible_en_ide": "no",
         "titulo": "Juego de la serpiente (Snake) en consola",
         "descripcion": "Versión simplificada de Snake que corre en la consola, con movimiento en tiempo real y detección de colisiones.",
         "dificultad": "Intermedio+",
@@ -3033,6 +3095,7 @@ PROYECTOS_CPP = [
     },
     {
         "id": 5,
+        "disponible_en_ide": "si",
         "titulo": "Evaluador de expresiones matemáticas",
         "descripcion": "Programa que recibe una expresión matemática como texto y calcula su resultado respetando la precedencia de operadores.",
         "dificultad": "Avanzado",
@@ -3081,6 +3144,7 @@ PROYECTOS_CPP = [
     },
     {
         "id": 6,
+        "disponible_en_ide": "no",
         "titulo": "Git para proyectos C++",
         "descripcion": "Versioná un proyecto C++ con Git sin ensuciar el repositorio con binarios compilados.",
         "dificultad": "Principiante+",
@@ -3130,6 +3194,7 @@ PROYECTOS_CPP = [
     },
     {
         "id": 7,
+        "disponible_en_ide": "no",
         "titulo": "Debugging con GDB: encontrá bugs como un profesional",
         "descripcion": "Usá el debugger de línea de comandos de C++ para encontrar segfaults y otros bugs reales.",
         "dificultad": "Intermedio",
@@ -3179,6 +3244,7 @@ PROYECTOS_CPP = [
     },
     {
         "id": 8,
+        "disponible_en_ide": "si",
         "titulo": "Testing en C++ con asserts y un mini framework",
         "descripcion": "Armá tu propio sistema de tests para verificar que tu código C++ funciona, sin depender de librerías externas.",
         "dificultad": "Intermedio",
@@ -3228,6 +3294,7 @@ PROYECTOS_CPP = [
     },
     {
         "id": 9,
+        "disponible_en_ide": "no",
         "titulo": "Compilación real: Makefiles y CMake básico",
         "descripcion": "Dejá de compilar a mano con g++ cada vez: automatizá el build de un proyecto con varios archivos.",
         "dificultad": "Intermedio",
@@ -3277,6 +3344,7 @@ PROYECTOS_CPP = [
     },
     {
         "id": 10,
+        "disponible_en_ide": "no",
         "titulo": "Consumí una API de IA desde C++ con libcurl",
         "descripcion": "Hacé requests HTTP reales desde C++ y conectate a un modelo de lenguaje, sin salir del lenguaje.",
         "dificultad": "Avanzado",

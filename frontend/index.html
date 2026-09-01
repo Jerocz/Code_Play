@@ -123,6 +123,10 @@
         <strong id="hud-xp">0</strong><span>XP</span>
       </div>
 
+      <div class="pill oculta" id="pill-titulo" data-icono="shield">
+        <strong id="hud-titulo"></strong><span>TÍTULO</span>
+      </div>
+
       <div class="rango-hud">
         <div class="rango-hud-fila">
           <span id="hud-rango">NOVATO · LVL 01</span>
@@ -274,6 +278,7 @@
     <div class="dialog-cuerpo">
       <h2 id="py-titulo"></h2>
       <p class="brief-contexto" id="py-objetivo"></p>
+      <div class="py-aviso-ide oculta" id="py-aviso-ide"></div>
 
       <div class="brief-cols">
         <div class="brief-col">
@@ -359,6 +364,11 @@
             </div>
           </div>
           <pre id="terminal">&gt; sistema listo_</pre>
+          <form id="terminal-stdin-form" class="terminal-stdin oculta" autocomplete="off">
+            <span class="terminal-stdin-caret">&gt;</span>
+            <input type="text" id="terminal-stdin" class="terminal-stdin-input"
+                   placeholder="escribí un valor para el programa y presioná Enter…" autocomplete="off" />
+          </form>
         </div>
 
         <div class="panel panel-error oculta" id="panel-error">

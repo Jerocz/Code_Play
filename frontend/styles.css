@@ -46,6 +46,77 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+button { color: inherit; }
+
+/* ─── TEMAS DEL DEPÓSITO (equipables desde la tienda) ───
+   Cada tema tiene un hue propio bien separado de los demás en la rueda de
+   color (verde / rojo-naranja / dorado-monocromo / azul / rosa pastel /
+   violeta / cian pálido helado / magenta neón), así se distinguen de un
+   vistazo y no solo por el borde de acento. */
+body.tema-matrix {
+  --bg: #050e07; --surface: #08160a; --surface-2: #0d220f; --ink: #030a04;
+  --text: #c9ffd6; --text-2: #8fe3a3; --muted: #5f9c72; --muted-2: #3f7350; --faint: #2c5238;
+  --line: #123018; --line-2: #1d4a26; --line-3: #0f2313;
+  --accent: #2fe673; --accent-300: #adffc9; --accent-400: #6dffa0;
+  --accent-600: #189a4c; --accent-700: #0f6a34; --accent-800: #0a4522;
+}
+body.tema-fuego {
+  --bg: #160604; --surface: #1f0a06; --surface-2: #2c100a; --ink: #0e0403;
+  --text: #ffe4d6; --text-2: #f2ac8c; --muted: #c47a5c; --muted-2: #95583e; --faint: #6b3c29;
+  --line: #33140d; --line-2: #552012; --line-3: #260f09;
+  --accent: #ff5a2e; --accent-300: #ffc0a3; --accent-400: #ff9166;
+  --accent-600: #cc3c14; --accent-700: #8f290e; --accent-800: #5c1a09;
+}
+body.tema-ambar {
+  --bg: #130d02; --surface: #1c1404; --surface-2: #291d07; --ink: #0c0801;
+  --text: #ffedb8; --text-2: #e4c078; --muted: #b6924e; --muted-2: #8a6c34; --faint: #634c25;
+  --line: #332204; --line-2: #523608; --line-3: #241902;
+  --accent: #e6a919; --accent-300: #ffe9a3; --accent-400: #ffcf5c;
+  --accent-600: #b5810a; --accent-700: #7d5906; --accent-800: #503803;
+}
+body.tema-oceano {
+  --bg: #040d16; --surface: #071a29; --surface-2: #0b2438; --ink: #030910;
+  --text: #d6ecff; --text-2: #9fc7ea; --muted: #6f95bd; --muted-2: #4a6d94; --faint: #334d6b;
+  --line: #0e2740; --line-2: #183c5c; --line-3: #0a1e30;
+  --accent: #1e9dff; --accent-300: #a9dcff; --accent-400: #5cbcff;
+  --accent-600: #0a6bc4; --accent-700: #074a8a; --accent-800: #052f5a;
+}
+body.tema-sakura {
+  --bg: #170e14; --surface: #20141d; --surface-2: #2b1a27; --ink: #100a0e;
+  --text: #ffe9f5; --text-2: #e6bcd7; --muted: #bd93ae; --muted-2: #946c87; --faint: #6d4d63;
+  --line: #33202c; --line-2: #4d2d41; --line-3: #241621;
+  --accent: #ff9ed4; --accent-300: #ffd9ef; --accent-400: #ffbde4;
+  --accent-600: #cc5f9e; --accent-700: #8f3f6c; --accent-800: #5c2745;
+}
+body.tema-medianoche {
+  --bg: #0a0716; --surface: #0f0b22; --surface-2: #151030; --ink: #06040e;
+  --text: #e6e0ff; --text-2: #b9adf0; --muted: #8a7ec2; --muted-2: #615693; --faint: #443b6b;
+  --line: #1c1740; --line-2: #2b235f; --line-3: #161230;
+  --accent: #7b5cff; --accent-300: #d2c4ff; --accent-400: #a48bff;
+  --accent-600: #4e35c4; --accent-700: #372590; --accent-800: #23175f;
+}
+body.tema-glaciar {
+  --bg: #0a1418; --surface: #122229; --surface-2: #1a2f38; --ink: #050d10;
+  --text: #f2ffff; --text-2: #c3e9ee; --muted: #8fb7bf; --muted-2: #628990; --faint: #456269;
+  --line: #1e363e; --line-2: #2c4a53; --line-3: #152a30;
+  --accent: #7fe8f5; --accent-300: #d9f9ff; --accent-400: #a9f0fa;
+  --accent-600: #39a8b8; --accent-700: #277683; --accent-800: #194b54;
+}
+body.tema-vaporwave {
+  --bg: #0d0518; --surface: #140a20; --surface-2: #1b0f2c; --ink: #08040f;
+  --text: #ffe0fa; --text-2: #dba8e8; --muted: #a97bc0; --muted-2: #7d5499; --faint: #583a70;
+  --line: #0f2b3a; --line-2: #17435a; --line-3: #0c1f2b;
+  --accent: #ff3ec7; --accent-300: #ffb3ec; --accent-400: #ff7fdb;
+  --accent-600: #c11a92; --accent-700: #861067; --accent-800: #560a43;
+}
+body.tema-apagon {
+  --bg: #000000; --surface: #0a0a0a; --surface-2: #151515; --ink: #000000;
+  --text: #ffffff; --text-2: #cfcfcf; --muted: #969696; --muted-2: #6b6b6b; --faint: #494949;
+  --line: #202020; --line-2: #363636; --line-3: #161616;
+  --accent: #ffffff; --accent-300: #ffffff; --accent-400: #e2e2e2;
+  --accent-600: #a8a8a8; --accent-700: #797979; --accent-800: #4d4d4d;
+}
+
 html, body { margin: 0; background: var(--bg); }
 
 body {
@@ -438,6 +509,18 @@ svg { display: block; flex: none; }
 .op.bloqueada .op-nombre { color: var(--muted-2); }
 .op-concepto { font-size: 11.5px; line-height: 1.45; color: var(--muted-2); }
 
+.op-llave {
+  flex: none;
+  align-self: center;
+  display: grid; place-items: center;
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--accent-600);
+  color: var(--accent-300);
+  cursor: pointer;
+}
+.op-llave:hover { background: rgba(145, 132, 217, 0.14); }
+
 .directiva-titulo { font-size: 13.5px; font-weight: 500; }
 .directiva-pie { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--muted-2); }
 
@@ -513,6 +596,7 @@ svg { display: block; flex: none; }
 }
 .tag-acento { border-color: var(--accent-600); color: var(--accent-300); }
 .tag-ok { border-color: rgba(120, 200, 170, 0.45); color: var(--ok); }
+.tag-warn { border-color: rgba(210, 170, 60, 0.45); color: var(--warn); }
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip {
@@ -700,6 +784,28 @@ svg { display: block; flex: none; }
 #terminal .ok { color: var(--ok); }
 #terminal .err { color: var(--err); }
 #terminal .acc { color: var(--accent-400); }
+
+.terminal-stdin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--accent-700);
+  background: var(--surface);
+}
+.terminal-stdin-caret { font-family: var(--mono); font-size: 12px; color: var(--accent); animation: parpadeo 1.1s steps(1) infinite; }
+.terminal-stdin-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  caret-color: var(--accent);
+}
+.terminal-stdin-input::placeholder { color: var(--muted-2); }
+@keyframes parpadeo { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.25; } }
 
 .panel-error {
   padding: 0;
@@ -928,6 +1034,7 @@ svg { display: block; flex: none; }
 }
 .req.caro { border-color: var(--line); }
 .req.tenes { border-color: rgba(120, 200, 170, 0.4); }
+.req.equipado { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(145, 132, 217, 0.35); }
 .req-top { display: flex; align-items: center; gap: 10px; }
 .req-icono {
   width: 32px; height: 32px;
@@ -939,7 +1046,9 @@ svg { display: block; flex: none; }
   color: var(--accent-400);
 }
 .req-codigo { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; color: var(--muted-2); }
+.req-stock { margin-left: auto; white-space: nowrap; font-family: var(--mono); font-size: 10.5px; color: var(--ok); }
 .req-precio { margin-left: auto; white-space: nowrap; font-family: var(--mono); font-size: 11.5px; color: var(--accent-400); }
+.req-stock + .req-precio { margin-left: 0; }
 .req.caro .req-precio { color: var(--muted-2); }
 .req strong { font-size: 14px; font-weight: 500; }
 .req p { font-size: 12px; line-height: 1.5; color: var(--muted); flex: 1; text-wrap: pretty; }
@@ -1030,6 +1139,21 @@ svg { display: block; flex: none; }
 .dialog-cuerpo { padding: 22px; display: flex; flex-direction: column; gap: 18px; }
 .dialog-cuerpo h2 { font-size: 26px; letter-spacing: -0.02em; }
 .brief-contexto { font-size: 14px; line-height: 1.6; color: var(--text-2); max-width: 62ch; text-wrap: pretty; }
+
+.py-aviso-ide {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid rgba(210, 170, 60, 0.35);
+  background: rgba(210, 170, 60, 0.08);
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+  max-width: 62ch;
+}
+.py-aviso-ide svg { flex: none; margin-top: 1px; color: var(--warn); }
 
 .brief-datos { display: flex; gap: var(--s4); flex-wrap: wrap; }
 .brief-dato {
